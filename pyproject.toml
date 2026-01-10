@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "gauchoguardian"
+version = "0.1.0"
+description = "Making your class selection easier."
+authors = ["Mordecai Araya, Roberto Ortiz, Blair Lu, Landon Gemmill"]
+readme = "README.md"
+package-mode = false
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+requests = "^2.32.5"
+flask = "^3.1.2"
+
+[tool.poetry.group.dev.dependencies]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

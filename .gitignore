@@ -1,0 +1,12 @@
+.py[cod]
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+# Poetry
+poetry.lock
+.poetry/
+
+# PDM (old)
+.pdm-python
+pdm.lock
