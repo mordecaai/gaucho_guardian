@@ -15,4 +15,6 @@ pdm.lock
 bl_testapikeytesting.py
 OLD_bl_testapikeytesting.py
 
-#
+#Folders for storing JSON files of test classes
+current_classes/*.json
+potential_classes/*.json
