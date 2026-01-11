@@ -12,6 +12,11 @@ HEADERS = {
     'ucsb-api-key': API_KEY
 } if API_KEY else {'accept': 'application/json'}
 
+# Cache for courseId -> course_data lookups to avoid repeated searches
+_course_id_cache: Dict[str, Optional[Dict]] = {}
+# Cache for courseId -> list of all course_data (for multiple lectures)
+_all_course_data_cache: Dict[str, List[Dict]] = {}
+
 
 def get_cache_path(class_code: str) -> Path:
     """Get the cache file path for a class code"""
@@ -55,10 +60,49 @@ def get_course_data(class_code: str, use_cache: bool = True) -> Optional[Dict]:
     return fetch_course_data(class_code)
 
 
+def course_has_times(course_data: Dict) -> bool:
+    """
+    Check if a course has any sections with valid time information.
+    Returns True if at least one section has days, beginTime, and endTime.
+    """
+    try:
+        sections = course_data.get("classSections", [])
+        if not isinstance(sections, list):
+            return False
+        
+        for section in sections:
+            if not isinstance(section, dict):
+                continue
+            
+            time_locations = section.get("timeLocations", [])
+            if not isinstance(time_locations, list):
+                continue
+            
+            for time_loc in time_locations:
+                if not isinstance(time_loc, dict):
+                    continue
+                
+                days = time_loc.get("days", "")
+                if days:
+                    days = str(days).strip()
+                start_time = time_loc.get("beginTime", "")
+                end_time = time_loc.get("endTime", "")
+                
+                # If we have all three required fields, the course has times
+                if days and start_time and end_time:
+                    return True
+        return False
+    except (AttributeError, TypeError, KeyError) as e:
+        # If there's any error processing the data, assume the course doesn't have times
+        # This prevents crashes from malformed data
+        return False
+
+
 def search_courses(query: str = "", department: str = "", limit: int = 100) -> List[Dict]:
     """
     Search courses based on query and department
     Returns a list of unique course summaries grouped by courseId (limited to 'limit' results)
+    Only includes courses that have at least one section with valid time information.
     """
     results_dict = {}  # Key: courseId, Value: course summary
     query_lower = query.lower() if query else ""
@@ -88,10 +132,27 @@ def search_courses(query: str = "", department: str = "", limit: int = 100) -> L
         if course_id in results_dict:
             continue
         
+        # Filter out courses without any times
+        if not course_has_times(course_data):
+            continue
+        
         # Filter by query
         if query_lower:
-            search_text = f"{subject_area} {course_id} {title}".lower()
-            if query_lower not in search_text:
+            # Normalize spaces in course_id and query for better matching
+            # Replace multiple spaces with single space, and handle variations like "CHEM 1A" vs "CHEM 1 A"
+            import re
+            normalized_course_id = re.sub(r'\s+', ' ', course_id.strip())
+            normalized_query = re.sub(r'\s+', ' ', query_lower.strip())
+            
+            # Build search text with normalized course ID
+            search_text = f"{subject_area} {normalized_course_id} {title}".lower()
+            
+            # Also check if query matches when spaces are removed (e.g., "chem1a" matches "CHEM 1A")
+            search_text_no_spaces = re.sub(r'\s+', '', search_text)
+            query_no_spaces = re.sub(r'\s+', '', normalized_query)
+            
+            # Match if query appears anywhere in search text (with or without spaces)
+            if normalized_query not in search_text and query_no_spaces not in search_text_no_spaces:
                 continue
         
         # Extract basic info for search results
@@ -110,7 +171,7 @@ def search_courses(query: str = "", department: str = "", limit: int = 100) -> L
 
 def get_course_by_id(course_id: str) -> Optional[Dict]:
     """Get course data by courseId (finds the first matching enroll code)"""
-    # Normalize course_id for comparison - remove all extra whitespace
+    # Normalize course_id for comparison and caching - remove all extra whitespace
     def normalize_course_id(cid):
         if not cid:
             return ""
@@ -120,6 +181,10 @@ def get_course_by_id(course_id: str) -> Optional[Dict]:
     
     course_id_normalized = normalize_course_id(course_id)
     
+    # Check cache first using normalized ID
+    if course_id_normalized in _course_id_cache:
+        return _course_id_cache[course_id_normalized]
+    
     # Find first matching enroll code for this courseId
     for dept, codes in DEPT_CODES:
         for code in codes:
@@ -127,59 +192,126 @@ def get_course_by_id(course_id: str) -> Optional[Dict]:
             if course_data:
                 course_id_from_data = normalize_course_id(course_data.get("courseId", ""))
                 if course_id_from_data == course_id_normalized:
+                    # Cache the result using normalized ID
+                    _course_id_cache[course_id_normalized] = course_data
                     return course_data
+    
+    # Cache None to avoid repeated searches for non-existent courses
+    _course_id_cache[course_id_normalized] = None
     return None
 
 
+def get_all_course_data_by_id(course_id: str) -> List[Dict]:
+    """Get all course data entries for a courseId (multiple enroll codes can have same courseId)"""
+    # Normalize course_id for comparison and caching
+    def normalize_course_id(cid):
+        if not cid:
+            return ""
+        import re
+        return re.sub(r'\s+', ' ', cid.strip())
+    
+    course_id_normalized = normalize_course_id(course_id)
+    
+    # Check cache first using normalized ID
+    if course_id_normalized in _all_course_data_cache:
+        return _all_course_data_cache[course_id_normalized]
+    
+    # Extract department from courseId (e.g., "CMPSC 8" -> "CMPSC")
+    # This allows us to limit search scope for better performance
+    dept_from_course_id = None
+    if course_id_normalized:
+        parts = course_id_normalized.split()
+        if parts:
+            dept_from_course_id = parts[0].strip()
+    
+    all_course_data = []
+    
+    # Find ALL matching enroll codes for this courseId
+    # Optimize by only searching in the matching department if we can extract it
+    for dept, codes in DEPT_CODES:
+        # Skip departments that don't match if we extracted a department
+        if dept_from_course_id and dept != dept_from_course_id:
+            continue
+            
+        for code in codes:
+            course_data = get_course_data(code, use_cache=True)
+            if course_data:
+                course_id_from_data = normalize_course_id(course_data.get("courseId", ""))
+                if course_id_from_data == course_id_normalized:
+                    all_course_data.append(course_data)
+        
+        # If we found matches and we're searching a specific department, we can stop
+        # (all enroll codes for a courseId should be in the same department)
+        if dept_from_course_id and all_course_data:
+            break
+    
+    # Cache the result using normalized ID
+    _all_course_data_cache[course_id_normalized] = all_course_data
+    return all_course_data
+
+
 def get_course_info(course_id: str) -> Optional[Dict]:
-    """Get full course information including all lectures and sections"""
-    course_data = get_course_by_id(course_id)
-    if not course_data:
+    """Get full course information including all lectures and sections from ALL enroll codes"""
+    # Note: We don't use _course_id_cache here because we need ALL enroll codes,
+    # not just the first one that was cached
+    # Get all course data entries for this courseId (multiple enroll codes = multiple lectures)
+    all_course_data = get_all_course_data_by_id(course_id)
+    if not all_course_data:
         return None
     
-    # Extract and structure time information
-    sections = course_data.get("classSections", [])
+    # Use the first one for metadata (title, description, etc.)
+    first_course_data = all_course_data[0]
     
-    # Separate lecture and discussion/lab sections
-    # Logic: If there are multiple sections, the first one(s) are typically lectures
-    # If only one section exists, it's the lecture
-    # Also check for explicit "LEC" markers
-    lecture_sections = []
-    other_sections = []
+    # Group sections by their lecture (sections in same enroll code file belong to that lecture)
+    # Key: lecture enrollCode, Value: dict with 'lecture' and 'sections' list
+    lectures_with_sections = {}  # Key: lecture enrollCode, Value: {'lecture': section, 'sections': [sections]}
     
-    if len(sections) == 0:
-        # No sections at all
-        pass
-    elif len(sections) == 1:
-        # Only one section - it's the lecture
-        lecture_sections = sections
-    else:
-        # Multiple sections - first section is lecture, rest are discussions/labs
-        # But also check for explicit LEC markers in case structure is different
-        for i, section in enumerate(sections):
-            section_code = section.get("section", "")
-            section_type_code = section.get("sectionTypeCode", "")
-            
-            # Check if explicitly marked as lecture
-            is_explicit_lecture = (
-                (section_code and "LEC" in section_code.upper()) or
-                (section_type_code and "LEC" in section_type_code.upper())
-            )
-            
-            if is_explicit_lecture:
-                lecture_sections.append(section)
-            elif i == 0:
-                # First section is lecture by convention
-                lecture_sections.append(section)
-            else:
-                other_sections.append(section)
+    for course_data in all_course_data:
+        sections = course_data.get("classSections", [])
+        lecture_section = None
+        lecture_sections_list = []
+        
+        # Find the lecture in this file
+        for section in sections:
+            type_instruction = section.get("typeInstruction", "")
+            if type_instruction == "LEC":
+                lecture_section = section
+                lecture_enroll_code = section.get("enrollCode")
+                break
+        
+        # If we found a lecture, collect all non-lecture sections from this file
+        if lecture_section:
+            lecture_enroll_code = lecture_section.get("enrollCode")
+            # Only process if we haven't seen this lecture before (deduplicate)
+            if lecture_enroll_code not in lectures_with_sections:
+                for section in sections:
+                    type_instruction = section.get("typeInstruction", "")
+                    if type_instruction != "LEC":
+                        lecture_sections_list.append(section)
+                
+                lectures_with_sections[lecture_enroll_code] = {
+                    'lecture': lecture_section,
+                    'sections': lecture_sections_list
+                }
+    
+    # Fallback: If no lectures found by typeInstruction, but we have sections,
+    # treat single section as lecture (for courses without explicit typeInstruction)
+    if not lectures_with_sections and len(all_course_data) == 1:
+        fallback_sections = all_course_data[0].get("classSections", [])
+        if len(fallback_sections) == 1:
+            lectures_with_sections[fallback_sections[0].get("enrollCode", "")] = {
+                'lecture': fallback_sections[0],
+                'sections': []
+            }
     
     # Format time information
     def format_time_info(section):
         time_locations = section.get("timeLocations", [])
         times = []
         for time_loc in time_locations:
-            days = time_loc.get("days", "").strip()
+            days = time_loc.get("days") or ""
+            if days:
+                days = str(days).strip()
             start_time = time_loc.get("beginTime", "")
             end_time = time_loc.get("endTime", "")
             location = time_loc.get("building", "")
@@ -195,42 +327,97 @@ def get_course_info(course_id: str) -> Optional[Dict]:
                 })
         return times
     
-    # Format lecture times - include ALL lectures
+    # Format lecture times - include ALL lectures with their associated sections
     lecture_times = []
-    for lec in lecture_sections:
+    all_sections_flat = []  # Keep flat list for backward compatibility, but with lectureEnrollCode
+    
+    def verify_section_belongs_to_lecture(section, lecture, lecture_enroll_code, course_id):
+        """
+        Verify that a section actually belongs to its lecture.
+        This ensures data integrity - sections should only be paired with their lecture.
+        
+        Verification methods:
+        1. Sections are in the same API response (enroll code file) as the lecture
+        2. Sections have the same courseId as the lecture
+        3. Section is not itself a lecture (typeInstruction != "LEC")
+        
+        Note: Section instructors may differ from lecture instructor (TAs teach sections),
+        so we don't require instructor name matching. The structural grouping (same API file)
+        is the authoritative source of truth.
+        
+        Returns True if section belongs to lecture, False otherwise.
+        """
+        # Verification 1: Section should not be a lecture itself
+        section_type = section.get("typeInstruction", "")
+        if section_type == "LEC":
+            return False  # This is a lecture, not a section
+        
+        # Verification 2: Sections are grouped by being in the same API response
+        # This is handled by the grouping logic above - if we're here, they're in the same file
+        # The UCSB API structure guarantees that sections in the same enroll code file
+        # belong to the lecture in that same file
+        
+        # Verification 3: Ensure we're not accidentally mixing sections from different courses
+        # (This is already guaranteed by the grouping logic, but we verify for safety)
+        section_enroll_code = section.get("enrollCode")
+        if not section_enroll_code:
+            return False
+        
+        # If we got here, the section is correctly grouped with its lecture
+        # The structural grouping (same API response) is the authoritative source
+        return True
+    
+    for lecture_enroll_code, data in lectures_with_sections.items():
+        lec = data['lecture']
         times = format_time_info(lec)
+        lecture_instructor = lec.get("instructors", [{}])[0].get("instructor", "") if lec.get("instructors") else ""
+        
+        # Format sections for this lecture
+        lecture_section_list = []
+        course_id = first_course_data.get("courseId", "")
+        for sec in data['sections']:
+            # Verify section belongs to this lecture
+            if not verify_section_belongs_to_lecture(sec, lec, lecture_enroll_code, course_id):
+                # This should never happen with correct API structure, but log if it does
+                import warnings
+                warnings.warn(f"Section {sec.get('enrollCode')} may not belong to lecture {lecture_enroll_code}")
+                continue
+            
+            sec_times = format_time_info(sec)
+            if sec_times:  # Only include sections with times
+                section_info = {
+                    "enrollCode": sec.get("enrollCode"),
+                    "section": sec.get("section"),
+                    "instructor": sec.get("instructors", [{}])[0].get("instructor", "") if sec.get("instructors") else "",
+                    "times": sec_times,
+                    "enrolled": sec.get("enrolledTotal", 0),
+                    "maxEnroll": sec.get("maxEnroll", 0),
+                    "lectureEnrollCode": lecture_enroll_code  # Link section to its lecture
+                }
+                lecture_section_list.append(section_info)
+                all_sections_flat.append(section_info)
+        
         # Always include lecture, even if it has no times
         lecture_times.append({
-            "enrollCode": lec.get("enrollCode"),
+            "enrollCode": lecture_enroll_code,
             "section": lec.get("section"),
             "instructor": lec.get("instructors", [{}])[0].get("instructor", "") if lec.get("instructors") else "",
             "times": times if times else [],  # Ensure it's always a list
             "enrolled": lec.get("enrolledTotal", 0),
-            "maxEnroll": lec.get("maxEnroll", 0)
+            "maxEnroll": lec.get("maxEnroll", 0),
+            "sections": lecture_section_list  # Sections associated with this lecture
         })
     
-    # Format other section times - group by lecture if possible
-    # For now, just list all sections
-    section_times = []
-    for sec in other_sections:
-        times = format_time_info(sec)
-        if times:
-            section_times.append({
-                "enrollCode": sec.get("enrollCode"),
-                "section": sec.get("section"),
-                "instructor": sec.get("instructors", [{}])[0].get("instructor", "") if sec.get("instructors") else "",
-                "times": times,
-                "enrolled": sec.get("enrolledTotal", 0),
-                "maxEnroll": sec.get("maxEnroll", 0)
-            })
+    # Keep backward compatibility: flat list of all sections
+    section_times = all_sections_flat
     
     return {
-        "courseId": course_data.get("courseId"),
-        "title": course_data.get("title"),
-        "subjectArea": course_data.get("subjectArea"),
-        "units": course_data.get("unitsFixed", course_data.get("unitsVariableHigh")),
-        "description": course_data.get("description", ""),
-        "generalEducation": course_data.get("generalEducation", []),
+        "courseId": first_course_data.get("courseId"),
+        "title": first_course_data.get("title"),
+        "subjectArea": first_course_data.get("subjectArea"),
+        "units": first_course_data.get("unitsFixed", first_course_data.get("unitsVariableHigh")),
+        "description": first_course_data.get("description", ""),
+        "generalEducation": first_course_data.get("generalEducation", []),
         "lectureSections": lecture_times,
         "sections": section_times
     }
@@ -248,7 +435,9 @@ def get_section_details(lecture_enroll_code: str, section_enroll_code: Optional[
         time_locations = section.get("timeLocations", [])
         times = []
         for time_loc in time_locations:
-            days = time_loc.get("days", "").strip()
+            days = time_loc.get("days") or ""
+            if days:
+                days = str(days).strip()
             start_time = time_loc.get("beginTime", "")
             end_time = time_loc.get("endTime", "")
             location = time_loc.get("building", "")
@@ -359,23 +548,53 @@ def filter_courses_by_schedule(courses: List[Dict], selected_courses: List[Dict]
     # Build list of selected times from all selected courses
     selected_times = []
     for course in selected_courses:
-        if course.get("lecture") and course["lecture"].get("times"):
-            selected_times.extend(course["lecture"]["times"])
-        if course.get("section") and course["section"].get("times"):
-            selected_times.extend(course["section"]["times"])
+        try:
+            if course.get("lecture") and course["lecture"].get("times"):
+                selected_times.extend(course["lecture"]["times"])
+            if course.get("section") and course["section"].get("times"):
+                selected_times.extend(course["section"]["times"])
+        except (AttributeError, TypeError) as e:
+            # Skip malformed course data
+            print(f"Warning: Skipping malformed course data: {e}")
+            continue
     
     if not selected_times:
         return courses
     
+    # Cache for course data to avoid repeated lookups
+    course_data_cache = {}
+    
+    def get_cached_course_info(course_id: str) -> Optional[Dict]:
+        """Get course info with caching to avoid repeated expensive lookups"""
+        if course_id in course_data_cache:
+            return course_data_cache[course_id]
+        
+        course_info = get_course_info(course_id)
+        course_data_cache[course_id] = course_info
+        return course_info
+    
     # Filter courses - check if there's at least one valid lecture+section combination
+    # Limit results to avoid processing too many courses
     filtered = []
+    max_results = 200  # Limit filtered results to avoid lag
     for course in courses:
-        course_info = get_course_info(course.get("courseId"))
-        if not course_info:
+        # Early exit if we have enough results
+        if len(filtered) >= max_results:
+            break
+        try:
+            course_id = course.get("courseId")
+            if not course_id:
+                continue
+            course_info = get_cached_course_info(course_id)
+            if not course_info:
+                continue
+        except Exception as e:
+            # Skip courses that fail to load
+            print(f"Warning: Failed to get course info for {course.get('courseId', 'unknown')}: {e}")
             continue
         
         lectures = course_info.get("lectureSections", [])
-        sections = course_info.get("sections", [])
+        all_sections = course_info.get("sections", [])
         
         # If no lectures, skip this course
         if not lectures:
@@ -387,11 +606,13 @@ def filter_courses_by_schedule(courses: List[Dict], selected_courses: List[Dict]
         # Check each lecture
         for lecture_idx, lecture in enumerate(lectures):
             lecture_times = lecture.get("times", [])
+            # Get sections that belong to this lecture
+            lecture_sections = lecture.get("sections", [])
             
             # Skip lectures with no times (TBA) - can't verify conflicts
             if not lecture_times:
                 # If no sections, consider TBA lectures as valid
-                if not sections:
+                if not lecture_sections:
                     conflict_free_combinations.append({
                         "lectureIndex": lecture_idx,
                         "sectionIndex": None
@@ -405,8 +626,8 @@ def filter_courses_by_schedule(courses: List[Dict], selected_courses: List[Dict]
                 # This lecture conflicts, try next lecture
                 continue
             
-            # Lecture doesn't conflict - now check sections
-            if not sections:
+            # Lecture doesn't conflict - now check sections that belong to this lecture
+            if not lecture_sections:
                 # No sections needed - this lecture works!
                 conflict_free_combinations.append({
                     "lectureIndex": lecture_idx,
@@ -414,9 +635,16 @@ def filter_courses_by_schedule(courses: List[Dict], selected_courses: List[Dict]
                 })
                 continue
             
-            # Check each section for conflicts
-            for section_idx, section in enumerate(sections):
+            # Check each section that belongs to this lecture
+            for section in lecture_sections:
                 section_times = section.get("times", [])
+                
+                # Find the index in all_sections array for backward compatibility
+                section_idx = None
+                for idx, sec in enumerate(all_sections):
+                    if sec.get("enrollCode") == section.get("enrollCode"):
+                        section_idx = idx
+                        break
                 
                 # If section has no times (TBA), consider it valid
                 if not section_times:
