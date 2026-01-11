@@ -193,6 +193,7 @@ def find_valid_combinations(course_id: str) -> List[Dict]:
     - This is the authoritative source of truth - sections are structurally linked to their lecture
     - Section instructors may differ from lecture instructor (TAs teach sections), which is normal
     - The get_course_info() function verifies this structural relationship
+    - For courses with sections but no lectures (e.g., labs), standalone sections are treated as their own "lectures"
     
     Returns list of combinations, each with lecture and optional section info.
     """
@@ -205,16 +206,47 @@ def find_valid_combinations(course_id: str) -> List[Dict]:
     
     combinations = []
     
+    # Handle courses with no lectures (only standalone sections)
+    if not lectures:
+        # If we have standalone sections, treat each as its own combination
+        for section_idx, section in enumerate(all_sections):
+            if section.get("isStandalone", False):
+                combinations.append({
+                    "lectureIndex": None,  # No lecture index for standalone sections
+                    "lecture": None,  # No lecture for standalone sections
+                    "sectionIndex": section_idx,
+                    "section": section,
+                    "isStandalone": True
+                })
+        return combinations
+    
     for lecture_idx, lecture in enumerate(lectures):
         lecture_times = lecture.get("times", [])
         lecture_enroll_code = lecture.get("enrollCode")
+        is_standalone = lecture.get("isStandalone", False)
         
         # Get sections that belong to this lecture
         # These sections are guaranteed to belong to this lecture because they come from
         # the same API response (same enroll code file) - verified in get_course_info()
         lecture_sections = lecture.get("sections", [])
         
-        if not lecture_sections:
+        # For standalone sections (no lecture), treat them as their own combination
+        if is_standalone:
+            # Find the index in the all_sections array
+            section_idx = None
+            for idx, sec in enumerate(all_sections):
+                if sec.get("enrollCode") == lecture_enroll_code:
+                    section_idx = idx
+                    break
+            
+            combinations.append({
+                "lectureIndex": lecture_idx,
+                "lecture": lecture,  # The standalone section acts as the "lecture"
+                "sectionIndex": section_idx,
+                "section": None,  # No sub-sections for standalone sections
+                "isStandalone": True
+            })
+        elif not lecture_sections:
             # No sections needed - just add lecture
             combinations.append({
                 "lectureIndex": lecture_idx,
@@ -553,21 +585,32 @@ def format_schedule_result(scored_schedule: Dict, course_ids: List[str]) -> Dict
         course_id = course_ids[i] if i < len(course_ids) else "Unknown"
         course_info = get_course_info(course_id)
         
+        # Handle standalone sections (where lecture may be None or the section itself)
+        lecture_data = combo.get("lecture")
+        is_standalone = combo.get("isStandalone", False)
+        
+        # For standalone sections, the lecture field contains the standalone section
+        if not lecture_data and combo.get("section"):
+            lecture_data = combo.get("section")
+        
         formatted_combo = {
             "courseId": course_id,
             "title": course_info.get("title", "") if course_info else "",
             "units": course_info.get("units", 0) if course_info else 0,
             "lecture": {
-                "enrollCode": combo["lecture"].get("enrollCode"),
-                "section": combo["lecture"].get("section"),
-                "instructor": combo["lecture"].get("instructor", ""),
-                "times": combo["lecture"].get("times", []),
-                "enrolled": combo["lecture"].get("enrolled", 0),
-                "maxEnroll": combo["lecture"].get("maxEnroll", 0)
+                "enrollCode": lecture_data.get("enrollCode") if lecture_data else None,
+                "section": lecture_data.get("section") if lecture_data else None,
+                "instructor": lecture_data.get("instructor", "") if lecture_data else "",
+                "times": lecture_data.get("times", []) if lecture_data else [],
+                "enrolled": lecture_data.get("enrolled", 0) if lecture_data else 0,
+                "maxEnroll": lecture_data.get("maxEnroll", 0) if lecture_data else 0,
+                "isStandalone": is_standalone,
+                "typeInstruction": lecture_data.get("typeInstruction", "") if lecture_data else ""
             }
         }
         
-        if combo["section"]:
+        # Only add section field if it's not a standalone section (standalone sections don't have sub-sections)
+        if combo.get("section") and not is_standalone:
             formatted_combo["section"] = {
                 "enrollCode": combo["section"].get("enrollCode"),
                 "section": combo["section"].get("section"),

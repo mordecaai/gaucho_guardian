@@ -814,6 +814,50 @@
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
+        .checkbox-row {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .checkbox-inline {
+            margin: 0;
+            flex: 1;
+            min-width: 160px;
+        }
+
+        .max-classes-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .max-classes-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin: 0;
+            line-height: 1.5;
+            white-space: nowrap;
+        }
+
+        .max-classes-select {
+            max-width: 120px;
+            padding: 0.5rem;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-family: inherit;
+            background: #ffffff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .max-classes-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
         .optimizer-status {
             font-size: 0.875rem;
             color: #6b7280;
@@ -1076,14 +1120,14 @@
 
                         <div class="preference-group">
                             <label>Time Preferences</label>
-                            <div class="time-inputs" style="margin-bottom: 0.75rem;">
+                            <div class="time-inputs">
                                 <select id="preferredStartTime">
                                 </select>
                                 <span>to</span>
                                 <select id="preferredEndTime">
                                 </select>
                             </div>
-                            <div class="radio-group" style="margin-top: 0.5rem;">
+                            <div class="radio-group">
                                 <div class="radio-option">
                                     <input type="radio" id="timeMorning" name="preferredTimeOfDay" value="morning">
                                     <label for="timeMorning">Morning</label>
@@ -1105,19 +1149,19 @@
 
                         <div class="preference-group">
                             <label>Schedule Structure</label>
-                            <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
-                                <div class="filter-checkbox" style="margin: 0; flex: 1; min-width: 160px;">
+                            <div class="checkbox-row">
+                                <div class="filter-checkbox checkbox-inline">
                                     <input type="checkbox" id="prioritizeFreeDays">
-                                    <label for="prioritizeFreeDays" style="font-size: 0.8rem;">More free days</label>
+                                    <label for="prioritizeFreeDays">More free days</label>
                                 </div>
-                                <div class="filter-checkbox" style="margin: 0; flex: 1; min-width: 160px;">
+                                <div class="filter-checkbox checkbox-inline">
                                     <input type="checkbox" id="minimizeGaps">
-                                    <label for="minimizeGaps" style="font-size: 0.8rem;">Minimize gaps</label>
+                                    <label for="minimizeGaps">Minimize gaps</label>
                                 </div>
                             </div>
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <label style="font-size: 0.8rem; color: #6b7280; margin: 0; line-height: 1.5; white-space: nowrap;">Max per day:</label>
-                                <select id="maxClassesPerDay" style="max-width: 120px; padding: 0.4rem; border: 1.5px solid #e5e7eb; border-radius: 6px; font-size: 0.8rem; line-height: 1.5; vertical-align: middle;">
+                            <div class="max-classes-row">
+                                <label class="max-classes-label">Max per day:</label>
+                                <select id="maxClassesPerDay" class="max-classes-select">
                                     <option value="">No limit</option>
                                     <option value="2">2</option>
                                     <option value="3">3</option>
@@ -1589,9 +1633,13 @@
                 
                 const course = data.course;
                 const lectures = course.lectureSections || [];
+                const sections = course.sections || [];
                 
-                if (lectures.length === 0) {
-                    alert('No lectures available for this course');
+                // Check if course has standalone sections (no lectures)
+                const hasStandaloneSections = lectures.length === 0 && sections.some(s => s.isStandalone);
+                
+                if (lectures.length === 0 && !hasStandaloneSections) {
+                    alert('No lectures or sections available for this course');
                     return;
                 }
                 
@@ -1652,6 +1700,16 @@
                 if (lectureIdx === null || lectureIdx === undefined) {
                     return true; // Can't check without a lecture
                 }
+                // Handle standalone sections (they use lectureIndex but sectionIndex may be set)
+                const lecture = lectures[lectureIdx];
+                const isStandalone = lecture && lecture.isStandalone;
+                if (isStandalone) {
+                    // For standalone sections, check if the combination exists (may have sectionIndex set)
+                    return conflictFreeCombinations.some(combo => 
+                        combo.lectureIndex === lectureIdx && 
+                        (combo.isStandalone || combo.sectionIndex === sectionIdx || combo.sectionIndex === null)
+                    );
+                }
                 return conflictFreeCombinations.some(combo => 
                     combo.lectureIndex === lectureIdx && 
                     (sectionIdx === null ? combo.sectionIndex === null : combo.sectionIndex === sectionIdx)
@@ -1663,6 +1721,14 @@
                 // Check conflicts whenever we have conflict data and selected courses
                 if (!hasSelectedCourses || conflictFreeCombinations.length === 0) {
                     return true; // No conflicts if no selected courses or no conflict data
+                }
+                const lecture = lectures[lectureIdx];
+                const isStandalone = lecture && lecture.isStandalone;
+                if (isStandalone) {
+                    // For standalone sections, check if any combination exists for this lecture
+                    return conflictFreeCombinations.some(combo => 
+                        combo.lectureIndex === lectureIdx && combo.isStandalone
+                    );
                 }
                 return conflictFreeCombinations.some(combo => combo.lectureIndex === lectureIdx);
             }
@@ -1680,8 +1746,11 @@
             }
             
             // Show all lectures with radio buttons (single selection)
+            // Also show standalone sections as selectable items
             if (lectures.length > 0) {
-                html += '<div style="margin-bottom: 1rem; color: #374151; font-size: 0.9rem;"><strong>Lectures (select one):</strong></div>';
+                const hasStandaloneLectures = lectures.some(l => l.isStandalone);
+                const sectionTypeLabel = hasStandaloneLectures ? 'Sections' : 'Lectures';
+                html += `<div style="margin-bottom: 1rem; color: #374151; font-size: 0.9rem;"><strong>${sectionTypeLabel} (select one):</strong></div>`;
                 html += '<div class="section-list" style="margin-bottom: 1.5rem;">';
                 lectures.forEach((lecture, idx) => {
                     const lectureTimeStr = lecture.times && lecture.times.length > 0
@@ -1697,12 +1766,17 @@
                     // Only apply opacity when filter is active
                     const opacity = (filterBySchedule && hasSelectedCourses && !lectureIsConflictFree) ? '0.6' : '1';
                     
+                    // For standalone sections, show the type (LAB, DIS, etc.)
+                    const sectionLabel = lecture.isStandalone && lecture.typeInstruction
+                        ? `${lecture.typeInstruction} ${lecture.section || ''}`.trim()
+                        : (lecture.section || 'Lecture');
+                    
                     html += `
                         <div class="section-item ${isSelected ? 'selected' : ''}" onclick="selectLecture(${idx})" style="opacity: ${opacity}; cursor: pointer;">
                             <div style="display: flex; align-items: start; gap: 0.75rem;">
                                 <input type="radio" name="lectureSelection" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation(); selectLecture(${idx})" style="margin-top: 0.25rem; cursor: pointer;">
                                 <div style="flex: 1;">
-                                    <div class="lecture-time">${lecture.section || 'Lecture'} ${conflictBadge}</div>
+                                    <div class="lecture-time">${sectionLabel} ${conflictBadge}</div>
                                     <div class="lecture-meta">${lectureTimeStr}</div>
                                     <div class="lecture-meta">${lecture.instructor || 'TBA'}</div>
                                     <div class="lecture-meta">${lecture.enrolled || 0}/${lecture.maxEnroll || 0}</div>
@@ -1714,16 +1788,20 @@
                 html += '</div>';
             }
             
-            // Show selected lecture summary
+            // Show selected lecture/section summary
             if (selectedLectureIndex !== null && selectedLectureIndex < lectures.length) {
                 const selectedLecture = lectures[selectedLectureIndex];
                 const lectureTimeStr = selectedLecture.times && selectedLecture.times.length > 0
                     ? selectedLecture.times.map(t => `${t.days} ${formatTime12Hour(t.startTime)}-${formatTime12Hour(t.endTime)}`).join(', ')
                     : 'Time TBA';
+                const sectionLabel = selectedLecture.isStandalone && selectedLecture.typeInstruction
+                    ? `${selectedLecture.typeInstruction} ${selectedLecture.section || ''}`.trim()
+                    : (selectedLecture.section || 'Lecture');
+                const label = selectedLecture.isStandalone ? 'Selected Section' : 'Selected Lecture';
                 html += `
                     <div style="margin-bottom: 1.5rem; padding: 1rem; background: #e8f4f8; border-radius: 4px;">
-                        <strong>Selected Lecture:</strong><br>
-                        ${selectedLecture.section || 'Lecture'} - ${lectureTimeStr}
+                        <strong>${label}:</strong><br>
+                        ${sectionLabel} - ${lectureTimeStr}
                     </div>
                 `;
             }
@@ -1735,7 +1813,11 @@
             
             if (selectedLectureIndex !== null && selectedLectureIndex < lectures.length) {
                 const lecture = lectures[selectedLectureIndex];
-                if (lecture && lecture.sections) {
+                // For standalone sections, there are no sub-sections - the section itself is the selection
+                if (lecture.isStandalone) {
+                    // Standalone sections don't have sub-sections, so availableSections stays empty
+                    // The lecture itself acts as the selectable item
+                } else if (lecture && lecture.sections) {
                     lecture.sections.forEach(section => {
                         // Find original index in sections array for conflict checking
                         const originalIndex = sections.findIndex(s => s.enrollCode === section.enrollCode);
@@ -1783,8 +1865,13 @@
                     `;
                 });
                 html += '</div>';
+            } else if (selectedLectureIndex !== null && selectedLectureIndex < lectures.length && lectures[selectedLectureIndex].isStandalone) {
+                // For standalone sections, no sub-sections are needed - the section itself is the selection
+                html += '<div style="margin-bottom: 0.75rem; color: #6b7280; font-size: 0.85rem; font-style: italic;">This is a standalone section - no additional sections to select</div>';
             } else if (sections.length > 0 && selectedLectureIndex === null) {
                 html += '<div style="margin-bottom: 0.75rem; color: #6b7280; font-size: 0.85rem; font-style: italic;">Select a lecture to see available sections</div>';
+            } else if (sections.length === 0 && lectures.length === 0) {
+                html += '<div class="empty-state" style="padding: 1.5rem 1rem;">No sections available</div>';
             } else if (sections.length === 0) {
                 html += '<div class="empty-state" style="padding: 1.5rem 1rem;">No sections available</div>';
             } else {
@@ -1792,11 +1879,18 @@
             }
             
             // Check if sections are available and if one is selected
+            // For standalone sections, selecting the lecture is enough (no sub-sections needed)
+            const selectedLecture = selectedLectureIndex !== null && selectedLectureIndex < lectures.length 
+                ? lectures[selectedLectureIndex] 
+                : null;
+            const isStandaloneSection = selectedLecture && selectedLecture.isStandalone;
             const hasSections = availableSections.length > 0;
-            const canAdd = selectedLectureIndex !== null && (hasSections ? selectedSectionIndex !== null : true);
-            const buttonText = hasSections 
-                ? (selectedSectionIndex !== null ? 'Add Course' : 'Select a Section First')
-                : 'Add Course';
+            const canAdd = selectedLectureIndex !== null && (isStandaloneSection || (hasSections ? selectedSectionIndex !== null : true));
+            const buttonText = isStandaloneSection
+                ? 'Add Course'
+                : (hasSections 
+                    ? (selectedSectionIndex !== null ? 'Add Course' : 'Select a Section First')
+                    : 'Add Course');
             
             html += `<button class="add-btn" onclick="addCourse()" ${canAdd ? '' : 'disabled'} style="${!canAdd ? 'opacity: 0.5; cursor: not-allowed;' : ''}">
                 ${buttonText}
@@ -1853,12 +1947,16 @@
             const lecture = currentCourse && selectedLectureIndex !== null 
                 ? currentCourse.lectureSections[selectedLectureIndex] 
                 : null;
+            const isStandaloneSection = lecture && lecture.isStandalone;
             const availableSections = lecture && lecture.sections ? lecture.sections : [];
             const hasSections = availableSections.length > 0;
-            const canAdd = selectedLectureIndex !== null && (hasSections ? selectedSectionIndex !== null : true);
-            const buttonText = hasSections 
-                ? (selectedSectionIndex !== null ? 'Add Course' : 'Select a Section First')
-                : 'Add Course';
+            // For standalone sections, selecting the lecture is enough (no sub-sections needed)
+            const canAdd = selectedLectureIndex !== null && (isStandaloneSection || (hasSections ? selectedSectionIndex !== null : true));
+            const buttonText = isStandaloneSection
+                ? 'Add Course'
+                : (hasSections 
+                    ? (selectedSectionIndex !== null ? 'Add Course' : 'Select a Section First')
+                    : 'Add Course');
             
             addBtn.disabled = !canAdd;
             addBtn.textContent = buttonText;
@@ -1869,7 +1967,7 @@
         async function addCourse() {
             // Get selected lecture (only one allowed)
             if (!currentCourse || selectedLectureIndex === null) {
-                alert('Error: Please select a lecture');
+                alert('Error: Please select a lecture or section');
                 return;
             }
             
@@ -1878,9 +1976,12 @@
                 index: selectedLectureIndex
             };
             
-            // Check if sections are required and selected
+            // For standalone sections, the lecture itself is the section - no sub-sections needed
+            const isStandaloneSection = lecture.isStandalone;
+            
+            // Check if sections are required and selected (skip for standalone sections)
             const availableSections = lecture.sections || [];
-            if (availableSections.length > 0 && selectedSectionIndex === null) {
+            if (!isStandaloneSection && availableSections.length > 0 && selectedSectionIndex === null) {
                 alert('Please select a section before adding the course.');
                 return;
             }
@@ -1890,8 +1991,17 @@
                 : null;
             
             // Find the section that belongs to this lecture (if a section was selected)
+            // For standalone sections, use the lecture's enroll code as the section code
             let sectionForThisLecture = null;
-            if (selectedSection) {
+            if (isStandaloneSection) {
+                // For standalone sections, the lecture itself is the section
+                sectionForThisLecture = {
+                    enrollCode: lecture.enrollCode,
+                    section: lecture.section,
+                    times: lecture.times,
+                    instructor: lecture.instructor
+                };
+            } else if (selectedSection) {
                 // Check if the selected section belongs to this lecture
                 if (lecture.sections && lecture.sections.some(s => s.enrollCode === selectedSection.enrollCode)) {
                     sectionForThisLecture = selectedSection;
@@ -2054,6 +2164,7 @@
                                 </div>
                                 <div style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.75rem;">${firstCourse.title}</div>
                                 ${courses.map(course => {
+                                    const isStandaloneSection = course.lecture && course.lecture.isStandalone;
                                     const lectureTime = course.lecture.times && course.lecture.times.length > 0
                                         ? course.lecture.times.map(t => 
                                             `${t.days} ${formatTime12Hour(t.startTime)}-${formatTime12Hour(t.endTime)}`
@@ -2064,17 +2175,22 @@
                                             `${t.days} ${formatTime12Hour(t.startTime)}-${formatTime12Hour(t.endTime)}`
                                           ).join(', ')
                                         : 'No section';
-                                    const lectureLabel = course.lecture.section || 'Lecture';
+                                    
+                                    // For standalone sections, show section type (LAB, DIS, etc.) instead of "Lecture"
+                                    let lectureLabel = course.lecture.section || 'Lecture';
+                                    if (isStandaloneSection && course.lecture.typeInstruction) {
+                                        lectureLabel = `${course.lecture.typeInstruction} ${course.lecture.section || ''}`.trim();
+                                    }
                                     
                                     return `
-                                        <div style="font-size: 0.8rem; color: #374151; margin-top: 0.75rem; padding: 0.75rem; background: #ffffff; border-radius: 6px; border: 1px solid #e5e7eb; position: relative;">
+                                        <div style="font-size: 0.8rem; color: #374151; margin-top: 0.75rem; padding: 0.75rem; padding-right: 5.5rem; background: #ffffff; border-radius: 6px; border: 1px solid #e5e7eb; position: relative;">
                                             <div style="margin-bottom: 0.375rem;">
-                                                <strong style="color: #2563eb;">${lectureLabel}:</strong> 
-                                                <span style="color: #6b7280;">${lectureTime}</span>
+                                                <strong style="color: #2563eb;">${isStandaloneSection ? 'Section' : 'Lecture'}:</strong> 
+                                                <span style="color: #6b7280;">${lectureLabel} - ${lectureTime}</span>
                                             </div>
-                                            <div style="color: #6b7280; font-size: 0.75rem;">
+                                            ${!isStandaloneSection ? `<div style="color: #6b7280; font-size: 0.75rem;">
                                                 Section: ${sectionTime}
-                                            </div>
+                                            </div>` : ''}
                                             <button class="remove-btn" onclick="removeCourse('${course.courseId}', '${course.lecture.enrollCode}')" style="position: absolute; top: 0.75rem; right: 0.75rem;">Remove</button>
                                         </div>
                                     `;
@@ -2634,8 +2750,17 @@
                 courses.forEach((course, courseIndex) => {
                     const color = colors[courseIndex % colors.length];
                     const courseLabel = course.courseId;
+                    const isStandaloneSection = course.lecture && course.lecture.isStandalone;
 
+                    // Render lecture times (or standalone section times as sections)
                     if (course.lecture && course.lecture.times) {
+                        // Determine the type label - use section type for standalone sections
+                        let typeLabel = 'Lecture';
+                        if (isStandaloneSection) {
+                            // For standalone sections, use the section type (LAB, DIS, etc.) or default to 'Section'
+                            typeLabel = course.lecture.typeInstruction || 'Section';
+                        }
+                        
                         course.lecture.times.forEach(timeInfo => {
                             timeInfo.days.split('').forEach(day => {
                                 if (['M', 'T', 'W', 'R', 'F'].includes(day)) {
@@ -2645,7 +2770,7 @@
                                         timeInfo.endTime,
                                         day,
                                         color,
-                                        'Lecture',
+                                        typeLabel,
                                         isPreview
                                     );
                                     if (block) {
@@ -2665,7 +2790,9 @@
                         });
                     }
 
-                    if (course.section && course.section.times) {
+                    // Render section times (only for non-standalone courses)
+                    // Standalone sections are already rendered above, so skip them here
+                    if (!isStandaloneSection && course.section && course.section.times) {
                         course.section.times.forEach(timeInfo => {
                             timeInfo.days.split('').forEach(day => {
                                 if (['M', 'T', 'W', 'R', 'F'].includes(day)) {
