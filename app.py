@@ -84,11 +84,15 @@ def api_course(course_id):
     """Get detailed course information by courseId"""
     try:
         # Flask automatically URL-decodes the path parameter
-        course_data = get_course_info(course_id)
+        # Normalize course_id to handle multiple spaces (e.g., "C LIT    36" -> "C LIT 36")
+        import re
+        normalized_course_id = re.sub(r'\s+', ' ', course_id.strip())
+        
+        course_data = get_course_info(normalized_course_id)
         if course_data:
             return jsonify({"success": True, "course": course_data})
         else:
-            return jsonify({"success": False, "error": f"Course not found: {course_id}"}), 404
+            return jsonify({"success": False, "error": f"Course not found: {normalized_course_id}"}), 404
     except Exception as e:
         import traceback
         traceback.print_exc()

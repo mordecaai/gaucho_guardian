@@ -511,13 +511,14 @@ def optimize_schedules(course_ids: List[str], preferences: Dict, max_results: in
         count_processed += 1
         
         # Add to heap (using negative score for min-heap behavior - we want max scores)
+        # Use count_processed as tiebreaker to avoid dict comparison errors
         if len(heap) < max_results:
-            heapq.heappush(heap, (-score, list(combo_product), schedule_times))
+            heapq.heappush(heap, (-score, count_processed, list(combo_product), schedule_times))
         else:
             # If heap is full, only add if this score is better than the worst
             # Compare negative scores (smaller negative = larger positive score)
             if -score < heap[0][0]:
-                heapq.heapreplace(heap, (-score, list(combo_product), schedule_times))
+                heapq.heapreplace(heap, (-score, count_processed, list(combo_product), schedule_times))
     
     if not heap:
         return []
@@ -525,7 +526,7 @@ def optimize_schedules(course_ids: List[str], preferences: Dict, max_results: in
     # Extract and sort results (best first)
     scored_schedules = []
     while heap:
-        neg_score, schedule, _ = heapq.heappop(heap)
+        neg_score, _, schedule, _ = heapq.heappop(heap)
         score = -neg_score  # Convert back to positive
         scored_schedules.append({
             "schedule": schedule,
@@ -555,6 +556,7 @@ def format_schedule_result(scored_schedule: Dict, course_ids: List[str]) -> Dict
         formatted_combo = {
             "courseId": course_id,
             "title": course_info.get("title", "") if course_info else "",
+            "units": course_info.get("units", 0) if course_info else 0,
             "lecture": {
                 "enrollCode": combo["lecture"].get("enrollCode"),
                 "section": combo["lecture"].get("section"),

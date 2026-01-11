@@ -1031,7 +1031,7 @@
                         <option value="">All Departments</option>
                     </select>
                     <div class="filter-checkbox">
-                        <input type="checkbox" id="filterBySchedule">
+                        <input type="checkbox" id="filterBySchedule" checked>
                         <label for="filterBySchedule">Show only classes with no time conflicts</label>
                     </div>
                     <div id="filterStatus"></div>
@@ -1043,7 +1043,7 @@
 
             <div class="selected-courses">
                 <div class="section-header" onclick="toggleSection('selectedCoursesSection')">
-                    <h3 class="section-title">Selected Courses</h3>
+                    <h3 class="section-title">Selected Courses <span id="totalUnitsDisplay" style="font-size: 0.85rem; font-weight: normal; color: #6b7280; margin-left: 0.5rem;"></span></h3>
                     <button class="collapse-toggle" id="selectedCoursesSectionToggle" aria-label="Toggle selected courses section">▼</button>
                 </div>
                 <div class="section-content" id="selectedCoursesSection">
@@ -1166,50 +1166,103 @@
         let conflictFreeCombinations = [];
         let courseConflictData = {}; // Map courseId -> conflictFreeCombinations
 
-        // Cookie helper functions
+        // Helper function to update selectedCourses and ALWAYS save (unless explicitly skipped)
+        function updateSelectedCourses(newCourses, skipSave = false) {
+            selectedCourses = newCourses;
+            if (!skipSave) {
+                saveSelectedCoursesToCookie();
+            }
+        }
+
+        // Storage helper functions - using localStorage (much larger limit than cookies)
         function setCookie(name, value, days = 365) {
-            const expires = new Date();
-            expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
-            document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=/`;
+            // Legacy function name - now uses localStorage
+            try {
+                localStorage.setItem(name, value);
+            } catch (error) {
+                if (error.name === 'QuotaExceededError') {
+                    console.error('❌ Storage quota exceeded! Cannot save courses.');
+                    alert('Storage limit reached! Please remove some courses and try again.');
+                } else {
+                    console.error('❌ Error saving to localStorage:', error);
+                }
+            }
         }
 
         function getCookie(name) {
-            const nameEQ = name + "=";
-            const ca = document.cookie.split(';');
-            for (let i = 0; i < ca.length; i++) {
-                let c = ca[i];
-                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-                if (c.indexOf(nameEQ) === 0) {
-                    return decodeURIComponent(c.substring(nameEQ.length, c.length));
-                }
-            }
-            return null;
+            // Legacy function name - now uses localStorage
+            return localStorage.getItem(name);
         }
 
-        // Save selected courses to cookie
+        // Save selected courses to storage (localStorage)
         function saveSelectedCoursesToCookie() {
             try {
                 const coursesJson = JSON.stringify(selectedCourses);
-                setCookie('selectedCourses', coursesJson);
+                const sizeKB = (new Blob([coursesJson]).size / 1024).toFixed(2);
+                console.log('💾 Saving to localStorage:', selectedCourses.length, 'courses', `(${sizeKB} KB)`);
+                
+                localStorage.setItem('selectedCourses', coursesJson);
+                
+                // Verify it was saved
+                const verify = localStorage.getItem('selectedCourses');
+                if (verify) {
+                    const verifiedCourses = JSON.parse(verify);
+                    console.log('✅ Saved successfully! Verified:', verifiedCourses.length, 'courses');
+                } else {
+                    console.error('❌ Save failed - verification returned null');
+                }
             } catch (error) {
-                console.error('Error saving courses to cookie:', error);
+                if (error.name === 'QuotaExceededError') {
+                    console.error('❌ Storage quota exceeded! Cannot save courses.');
+                    alert('Storage limit reached! Please remove some courses and try again.');
+                } else {
+                    console.error('❌ Error saving courses:', error);
+                }
             }
         }
 
-        // Load selected courses from cookie
+        // Load selected courses from storage (localStorage, with cookie fallback for migration)
         function loadSelectedCoursesFromCookie() {
             try {
-                const coursesJson = getCookie('selectedCourses');
-                if (coursesJson) {
-                    const loadedCourses = JSON.parse(coursesJson);
-                    if (Array.isArray(loadedCourses) && loadedCourses.length > 0) {
-                        selectedCourses = loadedCourses;
-                        masterSelectedCourses = JSON.parse(JSON.stringify(loadedCourses)); // Initialize master schedule
-                        return true;
+                // Try localStorage first
+                let coursesJson = localStorage.getItem('selectedCourses');
+                
+                // If not in localStorage, try migrating from cookie (one-time migration)
+                if (!coursesJson) {
+                    const cookieValue = document.cookie.split(';').find(c => c.trim().startsWith('selectedCourses='));
+                    if (cookieValue) {
+                        const cookieJson = decodeURIComponent(cookieValue.split('=')[1]);
+                        console.log('🔄 Migrating courses from cookie to localStorage...');
+                        coursesJson = cookieJson;
+                        // Save to localStorage for future use
+                        if (coursesJson) {
+                            localStorage.setItem('selectedCourses', coursesJson);
+                        }
                     }
                 }
+                
+                console.log('🔍 Loading courses from storage...', coursesJson ? 'Data found' : 'No data found');
+                
+                if (coursesJson) {
+                    const loadedCourses = JSON.parse(coursesJson);
+                    console.log('📦 Parsed courses:', loadedCourses.length, 'courses');
+                    
+                    if (Array.isArray(loadedCourses) && loadedCourses.length > 0) {
+                        console.log('✅ Loading', loadedCourses.length, 'courses into selectedCourses');
+                        // Set both selectedCourses and masterSelectedCourses
+                        updateSelectedCourses(loadedCourses, true); // Skip save on load
+                        masterSelectedCourses = JSON.parse(JSON.stringify(loadedCourses)); // Initialize master schedule
+                        console.log('✅ Courses loaded. selectedCourses:', selectedCourses.length, 'masterSelectedCourses:', masterSelectedCourses.length);
+                        console.log('📋 First course sample:', selectedCourses[0]?.courseId || 'none');
+                        return true;
+                    } else {
+                        console.log('⚠️ Loaded courses is not a valid array or is empty');
+                    }
+                } else {
+                    console.log('⚠️ No courses found in storage');
+                }
             } catch (error) {
-                console.error('Error loading courses from cookie:', error);
+                console.error('❌ Error loading courses:', error);
             }
             return false;
         }
@@ -1285,6 +1338,9 @@
             // Load saved courses from cookie (this also initializes masterSelectedCourses)
             const coursesLoaded = loadSelectedCoursesFromCookie();
             
+            // Automatically check the filter by schedule checkbox
+            document.getElementById('filterBySchedule').checked = true;
+            
             // Load saved section states
             setTimeout(loadSectionStates, 100);
             
@@ -1320,9 +1376,17 @@
             
             // If courses were loaded, update the UI after a brief delay to ensure calendar is ready
             if (coursesLoaded && selectedCourses.length > 0) {
+                console.log('🔄 Updating UI with loaded courses:', selectedCourses.length);
                 setTimeout(() => {
                     updateSelectedCoursesList();
                     updateCalendar();
+                    console.log('✅ UI updated with', selectedCourses.length, 'courses');
+                }, 100);
+            } else {
+                console.log('⚠️ No courses loaded or courses array is empty');
+                // Update total units display even if no courses (to clear it)
+                setTimeout(() => {
+                    updateTotalUnitsDisplay();
                 }, 100);
             }
             
@@ -1686,7 +1750,7 @@
             }
             
             if (availableSections.length > 0) {
-                html += '<div style="margin-bottom: 0.75rem; color: #374151; font-size: 0.9rem;"><strong>Sections (optional - for selected lectures only):</strong></div>';
+                html += '<div style="margin-bottom: 0.75rem; color: #374151; font-size: 0.9rem;"><strong>Sections (required - select one to add course):</strong></div>';
                 html += '<div class="section-list">';
                 
                 availableSections.forEach((section, localIndex) => {
@@ -1727,12 +1791,21 @@
                 html += '<div class="empty-state" style="padding: 1.5rem 1rem;">No sections available for selected lecture</div>';
             }
             
-            html += `<button class="add-btn" onclick="addCourse()" ${selectedLectureIndex === null ? 'disabled' : ''}>
-                Add Lecture
+            // Check if sections are available and if one is selected
+            const hasSections = availableSections.length > 0;
+            const canAdd = selectedLectureIndex !== null && (hasSections ? selectedSectionIndex !== null : true);
+            const buttonText = hasSections 
+                ? (selectedSectionIndex !== null ? 'Add Course' : 'Select a Section First')
+                : 'Add Course';
+            
+            html += `<button class="add-btn" onclick="addCourse()" ${canAdd ? '' : 'disabled'} style="${!canAdd ? 'opacity: 0.5; cursor: not-allowed;' : ''}">
+                ${buttonText}
             </button>`;
             
             content.innerHTML = html;
             modal.classList.add('active');
+            // Update button state after modal is rendered
+            setTimeout(updateAddButtonState, 50);
         }
         
         function selectLecture(index) {
@@ -1748,6 +1821,8 @@
             // Clear section selection when lecture changes (always clear when selecting/deselecting)
             selectedSectionIndex = null;
             showSectionModal();
+            // Update button state after modal is shown
+            setTimeout(updateAddButtonState, 50);
         }
         
         function toggleLecture(index) {
@@ -1766,6 +1841,29 @@
                     item.classList.remove('selected');
                 }
             });
+            
+            // Update the add button state when section is selected
+            updateAddButtonState();
+        }
+        
+        function updateAddButtonState() {
+            const addBtn = document.querySelector('.add-btn');
+            if (!addBtn) return;
+            
+            const lecture = currentCourse && selectedLectureIndex !== null 
+                ? currentCourse.lectureSections[selectedLectureIndex] 
+                : null;
+            const availableSections = lecture && lecture.sections ? lecture.sections : [];
+            const hasSections = availableSections.length > 0;
+            const canAdd = selectedLectureIndex !== null && (hasSections ? selectedSectionIndex !== null : true);
+            const buttonText = hasSections 
+                ? (selectedSectionIndex !== null ? 'Add Course' : 'Select a Section First')
+                : 'Add Course';
+            
+            addBtn.disabled = !canAdd;
+            addBtn.textContent = buttonText;
+            addBtn.style.opacity = canAdd ? '1' : '0.5';
+            addBtn.style.cursor = canAdd ? 'pointer' : 'not-allowed';
         }
 
         async function addCourse() {
@@ -1779,6 +1877,13 @@
                 ...currentCourse.lectureSections[selectedLectureIndex],
                 index: selectedLectureIndex
             };
+            
+            // Check if sections are required and selected
+            const availableSections = lecture.sections || [];
+            if (availableSections.length > 0 && selectedSectionIndex === null) {
+                alert('Please select a section before adding the course.');
+                return;
+            }
             
             const selectedSection = (selectedSectionIndex !== null && currentCourse.sections) 
                 ? currentCourse.sections[selectedSectionIndex] 
@@ -1814,6 +1919,9 @@
                     if (!alreadyAdded) {
                         selectedCourses.push(data.course);
                         
+                        // Save to cookie immediately after adding
+                        saveSelectedCoursesToCookie();
+                        
                         // Auto-optimize after adding course
                         autoOptimize();
                         
@@ -1825,7 +1933,6 @@
                         
                         updateSelectedCoursesList();
                         updateCalendar();
-                        saveSelectedCoursesToCookie(); // Save to cookie
                         closeModal();
                         // Re-search if filter is active
                         if (window.triggerSearchIfFiltered) {
@@ -1854,9 +1961,10 @@
 
         function removeCourse(courseId, lectureCode) {
             // Update master schedule and clear preview
-            selectedCourses = selectedCourses.filter(c => 
+            const filtered = selectedCourses.filter(c => 
                 !(c.courseId === courseId && c.lecture.enrollCode === lectureCode)
             );
+            updateSelectedCourses(filtered);
             masterSelectedCourses = JSON.parse(JSON.stringify(selectedCourses));
             previewScheduleIndex = null;
             previewSelectedCourses = null;
@@ -1864,7 +1972,7 @@
             
             updateSelectedCoursesList();
             updateCalendar();
-            saveSelectedCoursesToCookie(); // Save to cookie
+            // Auto-saved by reactive proxy
             // Re-search if filter is active
             if (window.triggerSearchIfFiltered) {
                 window.triggerSearchIfFiltered();
@@ -1873,8 +1981,43 @@
             autoOptimize();
         }
 
+        function updateTotalUnitsDisplay() {
+            const totalUnitsElement = document.getElementById('totalUnitsDisplay');
+            if (!totalUnitsElement) return;
+            
+            // Calculate total units from selected courses
+            // Group by courseId to avoid double-counting when multiple lectures of same course are selected
+            const uniqueCourseIds = new Set();
+            let totalUnits = 0;
+            
+            selectedCourses.forEach(course => {
+                if (!course || !course.courseId) return;
+                
+                const courseId = course.courseId;
+                // Only count units once per unique courseId
+                if (!uniqueCourseIds.has(courseId)) {
+                    // Safely get units - check multiple possible locations
+                    const units = parseFloat(course.units) || 
+                                 parseFloat(course.unitsFixed) || 
+                                 parseFloat(course.unitsVariableHigh) || 
+                                 0;
+                    totalUnits += units;
+                    uniqueCourseIds.add(courseId);
+                }
+            });
+            
+            if (selectedCourses.length === 0) {
+                totalUnitsElement.textContent = '';
+            } else {
+                totalUnitsElement.textContent = `(${totalUnits.toFixed(1)} units)`;
+            }
+        }
+
         function updateSelectedCoursesList() {
             const container = document.getElementById('selectedCoursesList');
+            
+            // Update total units display
+            updateTotalUnitsDisplay();
             
             if (selectedCourses.length === 0) {
                 container.innerHTML = '<div class="empty-state" style="padding: 1.5rem 1rem;">No courses selected</div>';
@@ -1895,12 +2038,19 @@
                 const firstCourse = courses[0];
                 const hasMultipleLectures = courses.length > 1;
                 
+                // Get units for this course
+                const units = parseFloat(firstCourse.units) || 
+                             parseFloat(firstCourse.unitsFixed) || 
+                             parseFloat(firstCourse.unitsVariableHigh) || 
+                             0;
+                const unitsDisplay = units > 0 ? ` <span style="color: #6b7280; font-weight: 500;">(${units.toFixed(1)} units)</span>` : '';
+                
                 return `
                     <div class="selected-course">
                         <div class="selected-course-header">
                             <div style="flex: 1;">
                                 <div style="font-weight: 600; font-size: 0.95rem; color: #111827; margin-bottom: 0.375rem;">
-                                    ${firstCourse.courseId}${hasMultipleLectures ? ` <span style="color: #6b7280; font-weight: 500;">(${courses.length} lectures)</span>` : ''}
+                                    ${firstCourse.courseId}${unitsDisplay}${hasMultipleLectures ? ` <span style="color: #6b7280; font-weight: 500;">(${courses.length} lectures)</span>` : ''}
                                 </div>
                                 <div style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.75rem;">${firstCourse.title}</div>
                                 ${courses.map(course => {
@@ -2010,8 +2160,10 @@
         }
 
         function updateCalendar() {
-            // Use preview courses if previewing, otherwise use master schedule
-            const coursesToDisplay = previewSelectedCourses !== null ? previewSelectedCourses : masterSelectedCourses;
+            // Use preview courses if previewing, otherwise use master schedule (fallback to selectedCourses)
+            const coursesToDisplay = previewSelectedCourses !== null 
+                ? previewSelectedCourses 
+                : (masterSelectedCourses.length > 0 ? masterSelectedCourses : selectedCourses);
             updateCalendarWithCourses(coursesToDisplay, previewSelectedCourses !== null);
         }
 
@@ -2300,7 +2452,13 @@
                         ).join(', ');
                         timesStr += timesStr ? ` | Sec: ${secTimes}` : `Sec: ${secTimes}`;
                     }
-                    return `<div class="schedule-course-item"><strong>${course.courseId}</strong>: ${timesStr || 'TBA'}</div>`;
+                    // Get units for this course
+                    const units = parseFloat(course.units) || 
+                                 parseFloat(course.unitsFixed) || 
+                                 parseFloat(course.unitsVariableHigh) || 
+                                 0;
+                    const unitsDisplay = units > 0 ? ` <span style="color: #6b7280;">(${units.toFixed(1)} units)</span>` : '';
+                    return `<div class="schedule-course-item"><strong>${course.courseId}</strong>${unitsDisplay}: ${timesStr || 'TBA'}</div>`;
                 }).join('');
 
                 const isPreviewing = index === previewScheduleIndex;
@@ -2352,6 +2510,7 @@
                     return {
                         courseId: course.courseId,
                         title: course.title || optCourse.title,
+                        units: course.units || optCourse.units || 0,
                         lecture: optCourse.lecture,
                         section: optCourse.section || null
                     };
@@ -2402,8 +2561,17 @@
             }
 
             // Apply preview to master schedule
-            masterSelectedCourses = JSON.parse(JSON.stringify(previewSelectedCourses));
-            selectedCourses = JSON.parse(JSON.stringify(previewSelectedCourses));
+            const newCourses = JSON.parse(JSON.stringify(previewSelectedCourses));
+            console.log('🔄 Applying schedule with', newCourses.length, 'courses');
+            
+            masterSelectedCourses = newCourses;
+            
+            // Update selectedCourses - this will auto-save
+            updateSelectedCourses(newCourses);
+            
+            // Double-check: ensure save happened
+            console.log('💾 Verifying save - selectedCourses now has', selectedCourses.length, 'courses');
+            
             appliedScheduleIndex = previewScheduleIndex;
             previewScheduleIndex = null;
             previewSelectedCourses = null;
@@ -2417,8 +2585,10 @@
             // Update UI
             updateSelectedCoursesList();
             updateCalendarWithCourses(selectedCourses, false);
-            saveSelectedCoursesToCookie();
             displayOptimizedSchedules(optimizedSchedules);
+            
+            // Save is already done by updateSelectedCourses, but ensure it happened
+            console.log('💾 Schedule applied. Current courses:', selectedCourses.length);
 
             // Visual feedback
             const scheduleOption = document.querySelectorAll('.schedule-option')[appliedScheduleIndex];
@@ -2540,12 +2710,12 @@
             }
             
             // Restore master schedule
-            selectedCourses = JSON.parse(JSON.stringify(masterSelectedCourses));
+            updateSelectedCourses(JSON.parse(JSON.stringify(masterSelectedCourses)));
             
             // Update UI
             updateSelectedCoursesList();
             updateCalendar();
-            saveSelectedCoursesToCookie();
+            // Auto-saved by reactive proxy
             displayOptimizedSchedules(optimizedSchedules);
         }
 

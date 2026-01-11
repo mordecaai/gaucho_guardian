@@ -60,10 +60,49 @@ def get_course_data(class_code: str, use_cache: bool = True) -> Optional[Dict]:
     return fetch_course_data(class_code)
 
 
+def course_has_times(course_data: Dict) -> bool:
+    """
+    Check if a course has any sections with valid time information.
+    Returns True if at least one section has days, beginTime, and endTime.
+    """
+    try:
+        sections = course_data.get("classSections", [])
+        if not isinstance(sections, list):
+            return False
+        
+        for section in sections:
+            if not isinstance(section, dict):
+                continue
+            
+            time_locations = section.get("timeLocations", [])
+            if not isinstance(time_locations, list):
+                continue
+            
+            for time_loc in time_locations:
+                if not isinstance(time_loc, dict):
+                    continue
+                
+                days = time_loc.get("days", "")
+                if days:
+                    days = str(days).strip()
+                start_time = time_loc.get("beginTime", "")
+                end_time = time_loc.get("endTime", "")
+                
+                # If we have all three required fields, the course has times
+                if days and start_time and end_time:
+                    return True
+        return False
+    except (AttributeError, TypeError, KeyError) as e:
+        # If there's any error processing the data, assume the course doesn't have times
+        # This prevents crashes from malformed data
+        return False
+
+
 def search_courses(query: str = "", department: str = "", limit: int = 100) -> List[Dict]:
     """
     Search courses based on query and department
     Returns a list of unique course summaries grouped by courseId (limited to 'limit' results)
+    Only includes courses that have at least one section with valid time information.
     """
     results_dict = {}  # Key: courseId, Value: course summary
     query_lower = query.lower() if query else ""
@@ -91,6 +130,10 @@ def search_courses(query: str = "", department: str = "", limit: int = 100) -> L
         
         # Skip if we already have this courseId
         if course_id in results_dict:
+            continue
+        
+        # Filter out courses without any times
+        if not course_has_times(course_data):
             continue
         
         # Filter by query
@@ -128,11 +171,7 @@ def search_courses(query: str = "", department: str = "", limit: int = 100) -> L
 
 def get_course_by_id(course_id: str) -> Optional[Dict]:
     """Get course data by courseId (finds the first matching enroll code)"""
-    # Check cache first
-    if course_id in _course_id_cache:
-        return _course_id_cache[course_id]
-    
-    # Normalize course_id for comparison - remove all extra whitespace
+    # Normalize course_id for comparison and caching - remove all extra whitespace
     def normalize_course_id(cid):
         if not cid:
             return ""
@@ -142,6 +181,10 @@ def get_course_by_id(course_id: str) -> Optional[Dict]:
     
     course_id_normalized = normalize_course_id(course_id)
     
+    # Check cache first using normalized ID
+    if course_id_normalized in _course_id_cache:
+        return _course_id_cache[course_id_normalized]
+    
     # Find first matching enroll code for this courseId
     for dept, codes in DEPT_CODES:
         for code in codes:
@@ -149,22 +192,18 @@ def get_course_by_id(course_id: str) -> Optional[Dict]:
             if course_data:
                 course_id_from_data = normalize_course_id(course_data.get("courseId", ""))
                 if course_id_from_data == course_id_normalized:
-                    # Cache the result
-                    _course_id_cache[course_id] = course_data
+                    # Cache the result using normalized ID
+                    _course_id_cache[course_id_normalized] = course_data
                     return course_data
     
     # Cache None to avoid repeated searches for non-existent courses
-    _course_id_cache[course_id] = None
+    _course_id_cache[course_id_normalized] = None
     return None
 
 
 def get_all_course_data_by_id(course_id: str) -> List[Dict]:
     """Get all course data entries for a courseId (multiple enroll codes can have same courseId)"""
-    # Check cache first
-    if course_id in _all_course_data_cache:
-        return _all_course_data_cache[course_id]
-    
-    # Normalize course_id for comparison
+    # Normalize course_id for comparison and caching
     def normalize_course_id(cid):
         if not cid:
             return ""
@@ -172,6 +211,10 @@ def get_all_course_data_by_id(course_id: str) -> List[Dict]:
         return re.sub(r'\s+', ' ', cid.strip())
     
     course_id_normalized = normalize_course_id(course_id)
+    
+    # Check cache first using normalized ID
+    if course_id_normalized in _all_course_data_cache:
+        return _all_course_data_cache[course_id_normalized]
     
     # Extract department from courseId (e.g., "CMPSC 8" -> "CMPSC")
     # This allows us to limit search scope for better performance
@@ -202,8 +245,8 @@ def get_all_course_data_by_id(course_id: str) -> List[Dict]:
         if dept_from_course_id and all_course_data:
             break
     
-    # Cache the result
-    _all_course_data_cache[course_id] = all_course_data
+    # Cache the result using normalized ID
+    _all_course_data_cache[course_id_normalized] = all_course_data
     return all_course_data
 
 
@@ -266,7 +309,9 @@ def get_course_info(course_id: str) -> Optional[Dict]:
         time_locations = section.get("timeLocations", [])
         times = []
         for time_loc in time_locations:
-            days = time_loc.get("days", "").strip()
+            days = time_loc.get("days") or ""
+            if days:
+                days = str(days).strip()
             start_time = time_loc.get("beginTime", "")
             end_time = time_loc.get("endTime", "")
             location = time_loc.get("building", "")
@@ -390,7 +435,9 @@ def get_section_details(lecture_enroll_code: str, section_enroll_code: Optional[
         time_locations = section.get("timeLocations", [])
         times = []
         for time_loc in time_locations:
-            days = time_loc.get("days", "").strip()
+            days = time_loc.get("days") or ""
+            if days:
+                days = str(days).strip()
             start_time = time_loc.get("beginTime", "")
             end_time = time_loc.get("endTime", "")
             location = time_loc.get("building", "")
