@@ -1,6 +1,9 @@
 import json
 import os
+import requests
+import time
 from datetime import datetime
+#from api_data_setup import fetch_class_data, dept_codes
 
 # --- 1. AUTO-SETUP FOLDERS ---
 # Define folder paths for the student's current schedule and potential new classes
