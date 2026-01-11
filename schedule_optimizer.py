@@ -4,18 +4,29 @@ Schedule Optimizer - Finds optimal lecture/section combinations for selected cou
 from typing import List, Dict, Optional, Tuple
 from course_service import get_course_info, has_time_conflict, check_times_conflict
 from itertools import product
+import heapq
+from functools import lru_cache
 
+
+# Cache for time conversions to avoid repeated parsing
+_time_cache: Dict[str, int] = {}
 
 def time_to_minutes(time_str: str) -> int:
-    """Convert time string (HH:MM) to minutes since midnight"""
+    """Convert time string (HH:MM) to minutes since midnight (memoized)"""
     if not time_str:
         return 0
+    if time_str in _time_cache:
+        return _time_cache[time_str]
     parts = time_str.split(':')
     if len(parts) != 2:
+        _time_cache[time_str] = 0
         return 0
     try:
-        return int(parts[0]) * 60 + int(parts[1])
+        result = int(parts[0]) * 60 + int(parts[1])
+        _time_cache[time_str] = result
+        return result
     except (ValueError, TypeError):
+        _time_cache[time_str] = 0
         return 0
 
 
@@ -37,6 +48,51 @@ def get_all_times_from_combination(combo: Dict) -> List[Dict]:
     if combo.get("section") and combo["section"] and combo["section"].get("times"):
         times.extend(combo["section"]["times"])
     return times
+
+
+def check_schedule_conflicts_fast(schedule_times: List[Dict]) -> bool:
+    """
+    Optimized conflict checking using day-based grouping.
+    Returns True if there are conflicts, False otherwise.
+    
+    Groups times by day first, then checks for overlaps within each day.
+    This is much faster than checking all pairs across all days.
+    """
+    if len(schedule_times) < 2:
+        return False
+    
+    # Group times by day for faster conflict checking
+    day_groups: Dict[str, List[Tuple[int, int]]] = {}
+    
+    for time_info in schedule_times:
+        days = time_info.get("days", "").replace(" ", "")
+        start_time = time_to_minutes(time_info.get("startTime", ""))
+        end_time = time_to_minutes(time_info.get("endTime", ""))
+        
+        if not start_time or not end_time:
+            continue
+        
+        for day in days:
+            if day in ['M', 'T', 'W', 'R', 'F']:
+                if day not in day_groups:
+                    day_groups[day] = []
+                day_groups[day].append((start_time, end_time))
+    
+    # Check conflicts within each day
+    # For sorted intervals, checking adjacent pairs is sufficient and faster
+    for day, intervals in day_groups.items():
+        if len(intervals) < 2:
+            continue
+        # Sort by start time
+        intervals.sort(key=lambda x: x[0])
+        # Check adjacent intervals for overlap (sufficient for sorted intervals)
+        for i in range(len(intervals) - 1):
+            # Check if intervals overlap: start1 < end2 and end1 > start2
+            # For sorted intervals, if i and i+1 don't overlap, i won't overlap with any j > i+1
+            if intervals[i][0] < intervals[i + 1][1] and intervals[i][1] > intervals[i + 1][0]:
+                return True
+    
+    return False
 
 
 def calculate_schedule_spread(combinations: List[Dict]) -> float:
@@ -194,53 +250,71 @@ def find_valid_combinations(course_id: str) -> List[Dict]:
     return combinations
 
 
-def generate_all_schedule_combinations(course_ids: List[str]) -> List[List[Dict]]:
+def generate_all_schedule_combinations(course_ids: List[str], max_results: Optional[int] = None) -> List[List[Dict]]:
     """
     Generate all valid schedule combinations across multiple courses.
     Returns list of schedules, where each schedule is a list of course combinations.
+    
+    If max_results is provided, stops early once we have enough valid schedules.
     """
     all_combinations_per_course = []
     
+    # Pre-extract times for each combination to avoid repeated work
+    combinations_with_times = []
     for course_id in course_ids:
         combinations = find_valid_combinations(course_id)
         if not combinations:
             return []  # If any course has no valid combinations, return empty
+        
+        # Pre-extract times for each combination
+        combo_with_times = []
+        for combo in combinations:
+            times = get_all_times_from_combination(combo)
+            combo_with_times.append((combo, times))
+        combinations_with_times.append(combo_with_times)
         all_combinations_per_course.append(combinations)
     
     # Generate cartesian product of all combinations
     all_schedules = []
+    count = 0
+    
     for combo_product in product(*all_combinations_per_course):
-        # Check if this combination has any internal conflicts
+        # Get pre-extracted times for this combination
         schedule_times = []
-        for combo in combo_product:
-            if combo["lecture"] and combo["lecture"].get("times"):
-                schedule_times.extend(combo["lecture"]["times"])
-            if combo["section"] and combo["section"].get("times"):
-                schedule_times.extend(combo["section"]["times"])
+        for i, combo in enumerate(combo_product):
+            # Find the corresponding times from our pre-extracted list
+            combo_idx = all_combinations_per_course[i].index(combo)
+            times = combinations_with_times[i][combo_idx][1]
+            schedule_times.extend(times)
         
-        # Check for conflicts within this schedule
-        has_conflict = False
-        for i, time1 in enumerate(schedule_times):
-            for j, time2 in enumerate(schedule_times):
-                if i < j and has_time_conflict(time1, time2):
-                    has_conflict = True
-                    break
-            if has_conflict:
-                break
-        
-        if not has_conflict:
+        # Use optimized conflict checking
+        if not check_schedule_conflicts_fast(schedule_times):
             all_schedules.append(list(combo_product))
+            count += 1
+            # Early termination if we have enough results
+            if max_results and count >= max_results:
+                break
     
     return all_schedules
 
 
-def score_schedule(combinations: List[Dict], preferences: Dict) -> float:
+def score_schedule(combinations: List[Dict], preferences: Dict, pre_extracted_times: Optional[List[Dict]] = None) -> float:
     """
     Score a schedule based on user preferences.
     Returns a score where higher = better.
+    
+    If pre_extracted_times is provided, uses that instead of extracting times again.
     """
     if not combinations:
         return 0.0
+    
+    # Use pre-extracted times if available, otherwise extract them
+    if pre_extracted_times is None:
+        all_times = []
+        for combo in combinations:
+            all_times.extend(get_all_times_from_combination(combo))
+    else:
+        all_times = pre_extracted_times
     
     score = 100.0  # Start with base score
     
@@ -267,9 +341,6 @@ def score_schedule(combinations: List[Dict], preferences: Dict) -> float:
     # Preference: avoid early morning
     avoid_early = preferences.get("avoidEarlyMorning", False)
     if avoid_early:
-        all_times = []
-        for combo in combinations:
-            all_times.extend(get_all_times_from_combination(combo))
         early_count = sum(1 for t in all_times 
                          if time_to_minutes(t.get("startTime", "")) < 540)  # Before 9 AM
         score -= early_count * 10.0  # Penalize early classes
@@ -277,9 +348,6 @@ def score_schedule(combinations: List[Dict], preferences: Dict) -> float:
     # Preference: avoid late evening
     avoid_late = preferences.get("avoidLateEvening", False)
     if avoid_late:
-        all_times = []
-        for combo in combinations:
-            all_times.extend(get_all_times_from_combination(combo))
         late_count = sum(1 for t in all_times 
                         if time_to_minutes(t.get("startTime", "")) > 1020)  # After 5 PM
         score -= late_count * 10.0  # Penalize late classes
@@ -288,13 +356,11 @@ def score_schedule(combinations: List[Dict], preferences: Dict) -> float:
     prioritize_free_days = preferences.get("prioritizeFreeDays", False)
     if prioritize_free_days:
         days_with_classes = set()
-        for combo in combinations:
-            times = get_all_times_from_combination(combo)
-            for time_info in times:
-                days = time_info.get("days", "")
-                for day in days:
-                    if day in ['M', 'T', 'W', 'R', 'F']:
-                        days_with_classes.add(day)
+        for time_info in all_times:
+            days = time_info.get("days", "")
+            for day in days:
+                if day in ['M', 'T', 'W', 'R', 'F']:
+                    days_with_classes.add(day)
         
         # Reward fewer days with classes (more free days)
         num_days_with_classes = len(days_with_classes)
@@ -306,16 +372,14 @@ def score_schedule(combinations: List[Dict], preferences: Dict) -> float:
     if minimize_gaps:
         # Group times by day and calculate gaps
         day_times = {'M': [], 'T': [], 'W': [], 'R': [], 'F': []}
-        for combo in combinations:
-            times = get_all_times_from_combination(combo)
-            for time_info in times:
-                days = time_info.get("days", "")
-                start_time = time_to_minutes(time_info.get("startTime", ""))
-                end_time = time_to_minutes(time_info.get("endTime", ""))
-                if start_time and end_time:
-                    for day in days:
-                        if day in day_times:
-                            day_times[day].append((start_time, end_time))
+        for time_info in all_times:
+            days = time_info.get("days", "")
+            start_time = time_to_minutes(time_info.get("startTime", ""))
+            end_time = time_to_minutes(time_info.get("endTime", ""))
+            if start_time and end_time:
+                for day in days:
+                    if day in day_times:
+                        day_times[day].append((start_time, end_time))
         
         # Calculate total gaps
         total_gap_minutes = 0
@@ -341,13 +405,11 @@ def score_schedule(combinations: List[Dict], preferences: Dict) -> float:
     max_classes_per_day = preferences.get("maxClassesPerDay")
     if max_classes_per_day:
         day_class_counts = {'M': 0, 'T': 0, 'W': 0, 'R': 0, 'F': 0}
-        for combo in combinations:
-            times = get_all_times_from_combination(combo)
-            for time_info in times:
-                days = time_info.get("days", "")
-                for day in days:
-                    if day in day_class_counts:
-                        day_class_counts[day] += 1
+        for time_info in all_times:
+            days = time_info.get("days", "")
+            for day in days:
+                if day in day_class_counts:
+                    day_class_counts[day] += 1
         
         # Penalize days that exceed the limit
         for day, count in day_class_counts.items():
@@ -358,10 +420,6 @@ def score_schedule(combinations: List[Dict], preferences: Dict) -> float:
     # Preference: preferred time of day
     preferred_time_of_day = preferences.get("preferredTimeOfDay")
     if preferred_time_of_day:
-        all_times = []
-        for combo in combinations:
-            all_times.extend(get_all_times_from_combination(combo))
-        
         if preferred_time_of_day == "morning":
             # Prefer classes before 12 PM (noon)
             morning_count = sum(1 for t in all_times 
@@ -388,30 +446,96 @@ def optimize_schedules(course_ids: List[str], preferences: Dict, max_results: in
     """
     Find optimal schedules for given courses based on preferences.
     Returns list of schedules sorted by score (best first).
+    
+    Uses a heap-based approach to keep only the top N schedules, avoiding
+    scoring all schedules if we have many combinations.
     """
     if not course_ids:
         return []
     
-    # Generate all valid combinations
-    all_schedules = generate_all_schedule_combinations(course_ids)
+    # Pre-extract combinations and their times
+    all_combinations_per_course = []
+    combinations_with_times = []
     
-    if not all_schedules:
+    for course_id in course_ids:
+        combinations = find_valid_combinations(course_id)
+        if not combinations:
+            return []  # If any course has no valid combinations, return empty
+        
+        # Pre-extract times for each combination
+        combo_with_times = []
+        for combo in combinations:
+            times = get_all_times_from_combination(combo)
+            combo_with_times.append((combo, times))
+        combinations_with_times.append(combo_with_times)
+        all_combinations_per_course.append(combinations)
+    
+    # Use a min-heap to keep only the top max_results schedules
+    # We'll use negative scores since heapq is a min-heap
+    heap = []
+    
+    # Generate combinations and score on-the-fly
+    # Create mappings from combo to index using unique identifiers (enrollCode)
+    combo_indices = []
+    for i, combos in enumerate(all_combinations_per_course):
+        combo_to_idx = {}
+        for idx, combo in enumerate(combos):
+            # Use lecture enrollCode as unique identifier
+            lecture_code = combo.get("lecture", {}).get("enrollCode")
+            section_code = combo.get("section", {}).get("enrollCode") if combo.get("section") else None
+            key = (lecture_code, section_code)
+            combo_to_idx[key] = idx
+        combo_indices.append(combo_to_idx)
+    
+    count_processed = 0
+    for combo_product in product(*all_combinations_per_course):
+        # Get pre-extracted times for this combination
+        schedule_times = []
+        for i, combo in enumerate(combo_product):
+            # Use enrollCode for fast lookup
+            lecture_code = combo.get("lecture", {}).get("enrollCode")
+            section_code = combo.get("section", {}).get("enrollCode") if combo.get("section") else None
+            key = (lecture_code, section_code)
+            combo_idx = combo_indices[i].get(key)
+            if combo_idx is not None:
+                times = combinations_with_times[i][combo_idx][1]
+                schedule_times.extend(times)
+        
+        # Check for conflicts first (fast check)
+        if check_schedule_conflicts_fast(schedule_times):
+            continue
+        
+        # Score the schedule using pre-extracted times
+        score = score_schedule(list(combo_product), preferences, schedule_times)
+        
+        count_processed += 1
+        
+        # Add to heap (using negative score for min-heap behavior - we want max scores)
+        if len(heap) < max_results:
+            heapq.heappush(heap, (-score, list(combo_product), schedule_times))
+        else:
+            # If heap is full, only add if this score is better than the worst
+            # Compare negative scores (smaller negative = larger positive score)
+            if -score < heap[0][0]:
+                heapq.heapreplace(heap, (-score, list(combo_product), schedule_times))
+    
+    if not heap:
         return []
     
-    # Score each schedule
+    # Extract and sort results (best first)
     scored_schedules = []
-    for schedule in all_schedules:
-        score = score_schedule(schedule, preferences)
+    while heap:
+        neg_score, schedule, _ = heapq.heappop(heap)
+        score = -neg_score  # Convert back to positive
         scored_schedules.append({
             "schedule": schedule,
             "score": score
         })
     
-    # Sort by score (descending)
+    # Sort by score descending (best first)
     scored_schedules.sort(key=lambda x: x["score"], reverse=True)
     
-    # Return top results
-    return scored_schedules[:max_results]
+    return scored_schedules
 
 
 def format_schedule_result(scored_schedule: Dict, course_ids: List[str]) -> Dict:

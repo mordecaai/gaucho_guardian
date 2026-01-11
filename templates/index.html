@@ -1031,7 +1031,7 @@
                         <option value="">All Departments</option>
                     </select>
                     <div class="filter-checkbox">
-                        <input type="checkbox" id="filterBySchedule" checked>
+                        <input type="checkbox" id="filterBySchedule">
                         <label for="filterBySchedule">Show only classes with no time conflicts</label>
                     </div>
                     <div id="filterStatus"></div>
@@ -1534,6 +1534,32 @@
                 // Get conflict-free combinations from stored data if available
                 conflictFreeCombinations = courseConflictData[courseId] || [];
                 
+                // If we have selected courses but no conflict data, fetch it
+                if (selectedCourses.length > 0 && conflictFreeCombinations.length === 0) {
+                    try {
+                        const searchResponse = await fetch('/api/search', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                q: courseId, // Search by full courseId (e.g., "CMPSC 16")
+                                dept: '',
+                                selectedCourses: selectedCourses
+                            })
+                        });
+                        const searchData = await searchResponse.json();
+                        if (searchData.success && searchData.courses) {
+                            const foundCourse = searchData.courses.find(c => c.courseId === courseId);
+                            if (foundCourse && foundCourse._conflictFreeCombinations) {
+                                conflictFreeCombinations = foundCourse._conflictFreeCombinations;
+                                courseConflictData[courseId] = conflictFreeCombinations;
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error fetching conflict data:', error);
+                        // Continue without conflict data
+                    }
+                }
+                
                 currentCourse = course;
                 currentLecture = null;
                 selectedLectureIndex = null; // Reset selected lecture
@@ -1555,8 +1581,9 @@
             
             // Helper to check if a lecture+section combination is conflict-free
             function isConflictFree(lectureIdx, sectionIdx) {
-                if (!filterBySchedule || !hasSelectedCourses || conflictFreeCombinations.length === 0) {
-                    return true; // Show all if not filtering
+                // Check conflicts whenever we have conflict data and selected courses
+                if (!hasSelectedCourses || conflictFreeCombinations.length === 0) {
+                    return true; // No conflicts if no selected courses or no conflict data
                 }
                 if (lectureIdx === null || lectureIdx === undefined) {
                     return true; // Can't check without a lecture
@@ -1569,8 +1596,9 @@
             
             // Helper to check if a lecture is conflict-free (with any section)
             function isLectureConflictFree(lectureIdx) {
-                if (!filterBySchedule || !hasSelectedCourses || conflictFreeCombinations.length === 0) {
-                    return true;
+                // Check conflicts whenever we have conflict data and selected courses
+                if (!hasSelectedCourses || conflictFreeCombinations.length === 0) {
+                    return true; // No conflicts if no selected courses or no conflict data
                 }
                 return conflictFreeCombinations.some(combo => combo.lectureIndex === lectureIdx);
             }
@@ -1597,10 +1625,12 @@
                         : 'Time TBA';
                     const isSelected = selectedLectureIndex === idx;
                     const lectureIsConflictFree = isLectureConflictFree(idx);
-                    const conflictBadge = filterBySchedule && hasSelectedCourses 
+                    // Show conflict badges whenever there are selected courses and conflict data is available
+                    const conflictBadge = hasSelectedCourses && conflictFreeCombinations.length > 0
                         ? (lectureIsConflictFree ? '<span style="color: #059669; font-size: 0.75rem; margin-left: 0.5rem; font-weight: 500;">✓ No conflicts</span>' 
                                           : '<span style="color: #dc2626; font-size: 0.75rem; margin-left: 0.5rem; font-weight: 500;">⚠ Conflicts</span>')
                         : '';
+                    // Only apply opacity when filter is active
                     const opacity = (filterBySchedule && hasSelectedCourses && !lectureIsConflictFree) ? '0.6' : '1';
                     
                     html += `
@@ -1668,10 +1698,12 @@
                     const sectionIsConflictFree = section.lectureIndex !== undefined
                         ? isConflictFree(section.lectureIndex, section.originalIndex)
                         : true;
-                    const conflictBadge = filterBySchedule && hasSelectedCourses 
+                    // Show conflict badges whenever there are selected courses and conflict data is available
+                    const conflictBadge = hasSelectedCourses && conflictFreeCombinations.length > 0
                         ? (sectionIsConflictFree ? '<span style="color: #059669; font-size: 0.75rem; margin-left: 0.5rem; font-weight: 500;">✓ No conflicts</span>' 
                                           : '<span style="color: #dc2626; font-size: 0.75rem; margin-left: 0.5rem; font-weight: 500;">⚠ Conflicts</span>')
                         : '';
+                    // Only apply opacity when filter is active
                     const opacity = (filterBySchedule && hasSelectedCourses && !sectionIsConflictFree) ? '0.6' : '1';
                     
                     // Find the original index in sections array for onclick
