@@ -1,4 +1,5 @@
 import requests
+import json
 
 MY_API_KEY = input("Enter your API key: ")
 
