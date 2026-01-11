@@ -15,7 +15,10 @@ HEADERS = {
 # Cache for courseId -> course_data lookups to avoid repeated searches
 _course_id_cache: Dict[str, Optional[Dict]] = {}
 # Cache for courseId -> list of all course_data (for multiple lectures)
+# Note: We cache empty lists, but will re-check if cache was populated before the fix
 _all_course_data_cache: Dict[str, List[Dict]] = {}
+# Track which courseIds we've done a full search for (to avoid re-searching unnecessarily)
+_full_search_cache: Dict[str, bool] = {}
 
 
 def get_cache_path(class_code: str) -> Path:
@@ -213,24 +216,46 @@ def get_all_course_data_by_id(course_id: str) -> List[Dict]:
     course_id_normalized = normalize_course_id(course_id)
     
     # Check cache first using normalized ID
-    if course_id_normalized in _all_course_data_cache:
+    # Only use cache if we've done a full search before (to avoid false negatives from old buggy code)
+    if course_id_normalized in _all_course_data_cache and course_id_normalized in _full_search_cache:
         return _all_course_data_cache[course_id_normalized]
     
-    # Extract department from courseId (e.g., "CMPSC 8" -> "CMPSC")
-    # This allows us to limit search scope for better performance
-    dept_from_course_id = None
+    # Try to find matching department(s) from courseId
+    # Handle multi-word departments like "C LIT", "AS AM", "BL ST"
+    matching_depts = []
     if course_id_normalized:
-        parts = course_id_normalized.split()
-        if parts:
-            dept_from_course_id = parts[0].strip()
+        # Get all department codes
+        all_dept_codes = [dept for dept, _ in DEPT_CODES]
+        
+        # Try to match department by checking if courseId starts with any department code
+        for dept_code in all_dept_codes:
+            # Normalize department code for comparison
+            dept_normalized = normalize_course_id(dept_code)
+            # Check if courseId starts with this department code (with space after)
+            if course_id_normalized.startswith(dept_normalized + " "):
+                matching_depts.append(dept_code)
+        
+        # If no exact match, try single-word match as fallback (e.g., "C" might match "C LIT")
+        if not matching_depts:
+            parts = course_id_normalized.split()
+            if parts:
+                first_part = parts[0].strip()
+                # Find departments that start with this part
+                for dept_code in all_dept_codes:
+                    dept_normalized = normalize_course_id(dept_code)
+                    dept_parts = dept_normalized.split()
+                    if dept_parts and dept_parts[0] == first_part:
+                        matching_depts.append(dept_code)
     
     all_course_data = []
     
     # Find ALL matching enroll codes for this courseId
-    # Optimize by only searching in the matching department if we can extract it
+    # Search in matching departments first, then fall back to all departments if no matches
+    depts_to_search = matching_depts if matching_depts else None  # None means search all
+    
     for dept, codes in DEPT_CODES:
-        # Skip departments that don't match if we extracted a department
-        if dept_from_course_id and dept != dept_from_course_id:
+        # Only search in matching departments if we have them, otherwise search all
+        if depts_to_search is not None and dept not in depts_to_search:
             continue
             
         for code in codes:
@@ -240,13 +265,38 @@ def get_all_course_data_by_id(course_id: str) -> List[Dict]:
                 if course_id_from_data == course_id_normalized:
                     all_course_data.append(course_data)
         
-        # If we found matches and we're searching a specific department, we can stop
+        # If we found matches and we're searching specific departments, we can stop
         # (all enroll codes for a courseId should be in the same department)
-        if dept_from_course_id and all_course_data:
+        if depts_to_search is not None and all_course_data:
             break
+    
+    # If we searched specific departments but found nothing, fall back to searching all departments
+    # This handles cases where department matching was incorrect
+    if depts_to_search is not None and not all_course_data:
+        # Debug: Log when fallback search is needed (indicates department matching issue)
+        import warnings
+        warnings.warn(f"Department matching for '{course_id_normalized}' found no results in {depts_to_search}, falling back to full search")
+        
+        for dept, codes in DEPT_CODES:
+            # Skip departments we already searched
+            if dept in depts_to_search:
+                continue
+                
+            for code in codes:
+                course_data = get_course_data(code, use_cache=True)
+                if course_data:
+                    course_id_from_data = normalize_course_id(course_data.get("courseId", ""))
+                    if course_id_from_data == course_id_normalized:
+                        all_course_data.append(course_data)
+            
+            # If we found matches, we can stop
+            if all_course_data:
+                break
     
     # Cache the result using normalized ID
     _all_course_data_cache[course_id_normalized] = all_course_data
+    # Mark that we've done a full search for this courseId
+    _full_search_cache[course_id_normalized] = True
     return all_course_data
 
 
@@ -294,6 +344,29 @@ def get_course_info(course_id: str) -> Optional[Dict]:
                     'sections': lecture_sections_list
                 }
     
+    # Handle courses with sections but no lectures (e.g., labs, standalone sections)
+    # Collect all non-lecture sections from all course data files
+    standalone_sections = []
+    for course_data in all_course_data:
+        sections = course_data.get("classSections", [])
+        for section in sections:
+            type_instruction = section.get("typeInstruction", "")
+            if type_instruction != "LEC":
+                standalone_sections.append(section)
+    
+    # If we have standalone sections but no lectures, create "lecture" entries for each section
+    # This allows the rest of the code to treat them uniformly
+    if not lectures_with_sections and standalone_sections:
+        for section in standalone_sections:
+            enroll_code = section.get("enrollCode", "")
+            if enroll_code and enroll_code not in lectures_with_sections:
+                # Treat each standalone section as its own "lecture" (but mark it as standalone)
+                lectures_with_sections[enroll_code] = {
+                    'lecture': section,  # The section itself acts as the "lecture"
+                    'sections': [],  # No sub-sections
+                    'isStandalone': True  # Flag to indicate this is a standalone section
+                }
+    
     # Fallback: If no lectures found by typeInstruction, but we have sections,
     # treat single section as lecture (for courses without explicit typeInstruction)
     if not lectures_with_sections and len(all_course_data) == 1:
@@ -301,7 +374,8 @@ def get_course_info(course_id: str) -> Optional[Dict]:
         if len(fallback_sections) == 1:
             lectures_with_sections[fallback_sections[0].get("enrollCode", "")] = {
                 'lecture': fallback_sections[0],
-                'sections': []
+                'sections': [],
+                'isStandalone': True
             }
     
     # Format time information
@@ -369,6 +443,7 @@ def get_course_info(course_id: str) -> Optional[Dict]:
     
     for lecture_enroll_code, data in lectures_with_sections.items():
         lec = data['lecture']
+        is_standalone = data.get('isStandalone', False)
         times = format_time_info(lec)
         lecture_instructor = lec.get("instructors", [{}])[0].get("instructor", "") if lec.get("instructors") else ""
         
@@ -376,8 +451,8 @@ def get_course_info(course_id: str) -> Optional[Dict]:
         lecture_section_list = []
         course_id = first_course_data.get("courseId", "")
         for sec in data['sections']:
-            # Verify section belongs to this lecture
-            if not verify_section_belongs_to_lecture(sec, lec, lecture_enroll_code, course_id):
+            # Verify section belongs to this lecture (skip for standalone sections)
+            if not is_standalone and not verify_section_belongs_to_lecture(sec, lec, lecture_enroll_code, course_id):
                 # This should never happen with correct API structure, but log if it does
                 import warnings
                 warnings.warn(f"Section {sec.get('enrollCode')} may not belong to lecture {lecture_enroll_code}")
@@ -397,16 +472,33 @@ def get_course_info(course_id: str) -> Optional[Dict]:
                 lecture_section_list.append(section_info)
                 all_sections_flat.append(section_info)
         
-        # Always include lecture, even if it has no times
-        lecture_times.append({
+        # Always include lecture/standalone section, even if it has no times
+        lecture_entry = {
             "enrollCode": lecture_enroll_code,
             "section": lec.get("section"),
             "instructor": lec.get("instructors", [{}])[0].get("instructor", "") if lec.get("instructors") else "",
             "times": times if times else [],  # Ensure it's always a list
             "enrolled": lec.get("enrolledTotal", 0),
             "maxEnroll": lec.get("maxEnroll", 0),
-            "sections": lecture_section_list  # Sections associated with this lecture
-        })
+            "sections": lecture_section_list,  # Sections associated with this lecture
+            "isStandalone": is_standalone,  # Flag indicating this is a standalone section (no lecture)
+            "typeInstruction": lec.get("typeInstruction", "")  # Preserve section type (LAB, DIS, etc.)
+        }
+        lecture_times.append(lecture_entry)
+        
+        # For standalone sections, also add them to the flat sections list
+        if is_standalone and times:
+            section_info = {
+                "enrollCode": lecture_enroll_code,
+                "section": lec.get("section"),
+                "instructor": lec.get("instructors", [{}])[0].get("instructor", "") if lec.get("instructors") else "",
+                "times": times,
+                "enrolled": lec.get("enrolledTotal", 0),
+                "maxEnroll": lec.get("maxEnroll", 0),
+                "lectureEnrollCode": None,  # No lecture for standalone sections
+                "isStandalone": True
+            }
+            all_sections_flat.append(section_info)
     
     # Keep backward compatibility: flat list of all sections
     section_times = all_sections_flat
@@ -424,8 +516,11 @@ def get_course_info(course_id: str) -> Optional[Dict]:
 
 
 def get_section_details(lecture_enroll_code: str, section_enroll_code: Optional[str] = None) -> Optional[Dict]:
-    """Get details for a specific lecture and optionally a section"""
-    # Find course data by lecture enroll code
+    """
+    Get details for a specific lecture and optionally a section.
+    For standalone sections (no lecture), lecture_enroll_code should be the section's enroll code.
+    """
+    # Find course data by lecture/section enroll code
     course_data = get_course_data(lecture_enroll_code, use_cache=True)
     if not course_data:
         return None
@@ -453,14 +548,21 @@ def get_section_details(lecture_enroll_code: str, section_enroll_code: Optional[
                 })
         return times
     
-    # Find the lecture section
+    # Find the lecture section (or standalone section)
     sections = course_data.get("classSections", [])
     lecture_section = None
     section_data = None
+    is_standalone = False
+    
+    # Check if this is a standalone section (no lecture in the course)
+    has_lecture = any(s.get("typeInstruction") == "LEC" for s in sections)
     
     for section in sections:
         if section.get("enrollCode") == lecture_enroll_code:
             lecture_section = section
+            # Check if this section is standalone (not a lecture)
+            if not has_lecture and section.get("typeInstruction") != "LEC":
+                is_standalone = True
         if section_enroll_code and section.get("enrollCode") == section_enroll_code:
             section_data = section
     
@@ -470,7 +572,8 @@ def get_section_details(lecture_enroll_code: str, section_enroll_code: Optional[
     lecture_times = format_time_info(lecture_section)
     section_times = format_time_info(section_data) if section_data else []
     
-    return {
+    # For standalone sections, the "lecture" field represents the standalone section itself
+    result = {
         "courseId": course_data.get("courseId"),
         "title": course_data.get("title"),
         "subjectArea": course_data.get("subjectArea"),
@@ -481,7 +584,9 @@ def get_section_details(lecture_enroll_code: str, section_enroll_code: Optional[
             "instructor": lecture_section.get("instructors", [{}])[0].get("instructor", "") if lecture_section.get("instructors") else "",
             "times": lecture_times,
             "enrolled": lecture_section.get("enrolledTotal", 0),
-            "maxEnroll": lecture_section.get("maxEnroll", 0)
+            "maxEnroll": lecture_section.get("maxEnroll", 0),
+            "isStandalone": is_standalone,
+            "typeInstruction": lecture_section.get("typeInstruction", "")
         },
         "section": {
             "enrollCode": section_enroll_code,
@@ -492,6 +597,8 @@ def get_section_details(lecture_enroll_code: str, section_enroll_code: Optional[
             "maxEnroll": section_data.get("maxEnroll", 0) if section_data else 0
         } if section_enroll_code else None
     }
+    
+    return result
 
 
 def has_time_conflict(time1: Dict, time2: Dict) -> bool:
@@ -596,73 +703,125 @@ def filter_courses_by_schedule(courses: List[Dict], selected_courses: List[Dict]
         lectures = course_info.get("lectureSections", [])
         all_sections = course_info.get("sections", [])
         
-        # If no lectures, skip this course
-        if not lectures:
-            continue
-        
         # Find all conflict-free combinations
         conflict_free_combinations = []
         
-        # Check each lecture
-        for lecture_idx, lecture in enumerate(lectures):
-            lecture_times = lecture.get("times", [])
-            # Get sections that belong to this lecture
-            lecture_sections = lecture.get("sections", [])
-            
-            # Skip lectures with no times (TBA) - can't verify conflicts
-            if not lecture_times:
-                # If no sections, consider TBA lectures as valid
+        # Handle courses with no lectures (only standalone sections)
+        if not lectures:
+            # Check standalone sections directly
+            for section_idx, section in enumerate(all_sections):
+                if section.get("isStandalone", False):
+                    section_times = section.get("times", [])
+                    
+                    # Skip sections with no times (TBA) - can't verify conflicts
+                    if not section_times:
+                        conflict_free_combinations.append({
+                            "lectureIndex": None,
+                            "sectionIndex": section_idx,
+                            "isStandalone": True
+                        })
+                        continue
+                    
+                    # Check if section conflicts
+                    section_conflicts = check_times_conflict(section_times, selected_times)
+                    
+                    if not section_conflicts:
+                        conflict_free_combinations.append({
+                            "lectureIndex": None,
+                            "sectionIndex": section_idx,
+                            "isStandalone": True
+                        })
+        else:
+            # Check each lecture
+            for lecture_idx, lecture in enumerate(lectures):
+                is_standalone = lecture.get("isStandalone", False)
+                lecture_times = lecture.get("times", [])
+                # Get sections that belong to this lecture
+                lecture_sections = lecture.get("sections", [])
+                
+                # Handle standalone sections (sections without lectures)
+                if is_standalone:
+                    # Find the index in all_sections array
+                    section_idx = None
+                    for idx, sec in enumerate(all_sections):
+                        if sec.get("enrollCode") == lecture.get("enrollCode"):
+                            section_idx = idx
+                            break
+                    
+                    # Skip standalone sections with no times (TBA) - can't verify conflicts
+                    if not lecture_times:
+                        conflict_free_combinations.append({
+                            "lectureIndex": lecture_idx,
+                            "sectionIndex": section_idx,
+                            "isStandalone": True
+                        })
+                        continue
+                    
+                    # Check if standalone section conflicts
+                    section_conflicts = check_times_conflict(lecture_times, selected_times)
+                    
+                    if not section_conflicts:
+                        conflict_free_combinations.append({
+                            "lectureIndex": lecture_idx,
+                            "sectionIndex": section_idx,
+                            "isStandalone": True
+                        })
+                    continue
+                
+                # Skip lectures with no times (TBA) - can't verify conflicts
+                if not lecture_times:
+                    # If no sections, consider TBA lectures as valid
+                    if not lecture_sections:
+                        conflict_free_combinations.append({
+                            "lectureIndex": lecture_idx,
+                            "sectionIndex": None
+                        })
+                    continue
+                
+                # Check if lecture conflicts
+                lecture_conflicts = check_times_conflict(lecture_times, selected_times)
+                
+                if lecture_conflicts:
+                    # This lecture conflicts, try next lecture
+                    continue
+                
+                # Lecture doesn't conflict - now check sections that belong to this lecture
                 if not lecture_sections:
+                    # No sections needed - this lecture works!
                     conflict_free_combinations.append({
                         "lectureIndex": lecture_idx,
                         "sectionIndex": None
                     })
-                continue
-            
-            # Check if lecture conflicts
-            lecture_conflicts = check_times_conflict(lecture_times, selected_times)
-            
-            if lecture_conflicts:
-                # This lecture conflicts, try next lecture
-                continue
-            
-            # Lecture doesn't conflict - now check sections that belong to this lecture
-            if not lecture_sections:
-                # No sections needed - this lecture works!
-                conflict_free_combinations.append({
-                    "lectureIndex": lecture_idx,
-                    "sectionIndex": None
-                })
-                continue
-            
-            # Check each section that belongs to this lecture
-            for section in lecture_sections:
-                section_times = section.get("times", [])
-                
-                # Find the index in all_sections array for backward compatibility
-                section_idx = None
-                for idx, sec in enumerate(all_sections):
-                    if sec.get("enrollCode") == section.get("enrollCode"):
-                        section_idx = idx
-                        break
-                
-                # If section has no times (TBA), consider it valid
-                if not section_times:
-                    conflict_free_combinations.append({
-                        "lectureIndex": lecture_idx,
-                        "sectionIndex": section_idx
-                    })
                     continue
                 
-                # Check if section conflicts
-                section_conflicts = check_times_conflict(section_times, selected_times)
-                
-                if not section_conflicts:
-                    # Found a valid lecture+section combination!
-                    conflict_free_combinations.append({
-                        "lectureIndex": lecture_idx,
-                        "sectionIndex": section_idx
-                    })
+                # Check each section that belongs to this lecture
+                for section in lecture_sections:
+                    section_times = section.get("times", [])
+                    
+                    # Find the index in all_sections array for backward compatibility
+                    section_idx = None
+                    for idx, sec in enumerate(all_sections):
+                        if sec.get("enrollCode") == section.get("enrollCode"):
+                            section_idx = idx
+                            break
+                    
+                    # If section has no times (TBA), consider it valid
+                    if not section_times:
+                        conflict_free_combinations.append({
+                            "lectureIndex": lecture_idx,
+                            "sectionIndex": section_idx
+                        })
+                        continue
+                    
+                    # Check if section conflicts
+                    section_conflicts = check_times_conflict(section_times, selected_times)
+                    
+                    if not section_conflicts:
+                        # Found a valid lecture+section combination!
+                        conflict_free_combinations.append({
+                            "lectureIndex": lecture_idx,
+                            "sectionIndex": section_idx
+                        })
         
         # Only include course if it has at least one conflict-free combination
         if conflict_free_combinations:
