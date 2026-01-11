@@ -13,33 +13,35 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-            line-height: 1.5;
-            color: #1a1a1a;
-            background-color: #ffffff;
+            line-height: 1.6;
+            color: #1f2937;
+            background: linear-gradient(to bottom, #f9fafb 0%, #ffffff 100%);
             padding: 2rem;
             max-width: 1600px;
             margin: 0 auto;
+            min-height: 100vh;
         }
 
         .header {
-            margin-bottom: 2rem;
+            margin-bottom: 2.5rem;
         }
 
         h1 {
-            font-size: 2rem;
-            font-weight: 600;
+            font-size: 2.25rem;
+            font-weight: 700;
             margin-bottom: 0.5rem;
-            color: #000;
+            color: #111827;
+            letter-spacing: -0.02em;
         }
 
         .subtitle {
-            color: #666;
-            font-size: 0.9rem;
+            color: #6b7280;
+            font-size: 1rem;
         }
 
         .main-container {
             display: grid;
-            grid-template-columns: 400px 1fr;
+            grid-template-columns: 380px 1fr;
             gap: 2rem;
             margin-bottom: 3rem;
         }
@@ -47,67 +49,222 @@
         .sidebar {
             display: flex;
             flex-direction: column;
-            gap: 2rem;
+            gap: 1.5rem;
         }
 
-        .search-section {
+        /* Ensure uniform spacing between sections regardless of collapsed state */
+        .sidebar > * {
+            margin: 0;
+        }
+
+        .search-section,
+        .selected-courses,
+        .schedule-optimizer {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+            transition: padding 0.15s ease;
+        }
+
+        .search-section.collapsed,
+        .selected-courses.collapsed,
+        .schedule-optimizer.collapsed {
+            padding: 0.75rem 1.5rem;
+        }
+
+        .section-header {
             display: flex;
-            flex-direction: column;
-            gap: 1rem;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            user-select: none;
+            transition: margin-bottom 0.15s ease;
+            min-height: 28px;
+        }
+
+        .search-section.collapsed .section-header,
+        .selected-courses.collapsed .section-header,
+        .schedule-optimizer.collapsed .section-header {
+            margin-bottom: 0;
         }
 
         .section-title {
             font-size: 1rem;
             font-weight: 600;
-            margin-bottom: 0.5rem;
+            margin: 0;
+            color: #111827;
+            letter-spacing: -0.01em;
+            flex: 1;
+        }
+
+        .collapse-toggle {
+            background: none;
+            border: none;
+            color: #6b7280;
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            transition: transform 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            flex-shrink: 0;
+            transform-origin: center center;
+            position: relative;
+        }
+
+        .collapse-toggle:hover {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .collapse-toggle.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .section-header:active .collapse-toggle {
+            transform: scale(0.95);
+        }
+
+        .section-header:active .collapse-toggle.collapsed {
+            transform: rotate(-90deg) scale(0.95);
+        }
+
+        .section-content {
+            overflow: hidden;
+            transition: max-height 0.15s cubic-bezier(0.4, 0, 0.2, 1), 
+                        opacity 0.1s ease,
+                        margin 0.15s ease,
+                        padding 0.15s ease;
+            max-height: 5000px;
+            opacity: 1;
+        }
+
+        .section-content.collapsed {
+            max-height: 0 !important;
+            opacity: 0;
+            margin-top: 0;
+            margin-bottom: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+
+        .search-section .section-content.collapsed,
+        .selected-courses .section-content.collapsed,
+        .schedule-optimizer .section-content.collapsed {
+            margin: 0;
+        }
+
+        /* Add collapsed class to parent section when content is collapsed */
+        .search-section:has(.section-content.collapsed),
+        .selected-courses:has(.section-content.collapsed),
+        .schedule-optimizer:has(.section-content.collapsed) {
+            padding: 0.75rem 1.5rem;
         }
 
         input[type="text"],
         select {
             width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            padding: 0.75rem 1rem;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 8px;
             font-size: 0.9rem;
             font-family: inherit;
-            background: #fff;
+            background: #ffffff;
+            transition: all 0.2s ease;
+        }
+
+        input[type="text"] {
+            margin-bottom: 0.75rem;
+        }
+
+        select {
+            margin-bottom: 0.75rem;
         }
 
         input[type="text"]:focus,
         select:focus {
             outline: none;
-            border-color: #0066cc;
-            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
         .filter-checkbox {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 0.5rem;
+            gap: 0.625rem;
+            margin-top: 0.25rem;
+            padding: 0.75rem;
+            background: #f9fafb;
+            border-radius: 8px;
         }
 
-        .filter-checkbox input {
-            width: auto;
+        .filter-checkbox:first-of-type {
+            margin-top: 0.75rem;
+        }
+
+        .filter-checkbox input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #3b82f6;
+        }
+
+        .filter-checkbox label {
+            font-size: 0.875rem;
+            color: #374151;
+            cursor: pointer;
+        }
+
+        #filterStatus {
+            font-size: 0.8rem;
+            color: #6b7280;
+            margin-top: 0.5rem;
+            min-height: 1.2rem;
+            padding-left: 0.25rem;
         }
 
         .search-results {
-            border: 1px solid #e0e0e0;
-            border-radius: 4px;
-            max-height: 400px;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 8px;
+            max-height: 420px;
             overflow-y: auto;
-            background: #fff;
+            background: #ffffff;
+            margin-top: 1rem;
+        }
+
+        .search-results::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .search-results::-webkit-scrollbar-track {
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+
+        .search-results::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 4px;
+        }
+
+        .search-results::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
         }
 
         .course-item {
             padding: 1rem;
-            border-bottom: 1px solid #f0f0f0;
+            border-bottom: 1px solid #f3f4f6;
             cursor: pointer;
-            transition: background-color 0.15s;
+            transition: all 0.2s ease;
         }
 
         .course-item:hover {
-            background-color: #f8f8f8;
+            background-color: #f9fafb;
         }
 
         .course-item:last-child {
@@ -117,142 +274,282 @@
         .course-code {
             font-weight: 600;
             font-size: 0.9rem;
-            color: #0066cc;
-            margin-bottom: 0.25rem;
+            color: #2563eb;
+            margin-bottom: 0.375rem;
         }
 
         .course-title {
-            font-size: 0.85rem;
-            color: #333;
+            font-size: 0.875rem;
+            color: #374151;
             margin-bottom: 0.25rem;
+            line-height: 1.4;
         }
 
         .course-meta {
             font-size: 0.75rem;
-            color: #666;
-        }
-
-        .selected-courses {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
+            color: #6b7280;
         }
 
         .selected-course {
-            padding: 0.75rem;
-            background: #f8f8f8;
-            border-radius: 4px;
-            border: 1px solid #e0e0e0;
+            padding: 1rem;
+            background: #f9fafb;
+            border-radius: 8px;
+            border: 1.5px solid #e5e7eb;
+            margin-bottom: 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .selected-course:hover {
+            border-color: #d1d5db;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
 
         .selected-course-header {
             display: flex;
             justify-content: space-between;
             align-items: start;
-            margin-bottom: 0.5rem;
         }
 
         .remove-btn {
             background: none;
             border: none;
-            color: #cc0000;
+            color: #dc2626;
             cursor: pointer;
-            font-size: 0.85rem;
-            padding: 0;
+            font-size: 0.875rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            font-weight: 500;
         }
 
         .remove-btn:hover {
-            text-decoration: underline;
+            background: #fee2e2;
+            color: #b91c1c;
         }
 
         .calendar-container {
-            background: #fff;
-            border: 1px solid #e0e0e0;
-            border-radius: 4px;
+            background: #ffffff;
+            border-radius: 12px;
             padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+            transition: box-shadow 0.3s ease;
+            position: sticky;
+            top: 2rem;
+            align-self: flex-start;
+            max-height: calc(100vh - 4rem);
+            overflow-y: auto;
+        }
+
+        .calendar-container.updating {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2), 0 4px 12px rgba(59, 130, 246, 0.15);
+        }
+
+        .calendar-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .calendar-container::-webkit-scrollbar-track {
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+
+        .calendar-container::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 4px;
+        }
+
+        .calendar-container::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
         }
 
         .calendar-header {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
         }
 
         .calendar-header h2 {
             font-size: 1.25rem;
             font-weight: 600;
-            margin-bottom: 0.5rem;
+            color: #111827;
+            letter-spacing: -0.01em;
         }
 
         .calendar-wrapper {
             display: grid;
-            grid-template-columns: 60px repeat(5, 1fr);
+            grid-template-columns: 80px repeat(5, 1fr);
             gap: 1px;
-            background: #e0e0e0;
-            border: 1px solid #e0e0e0;
-            border-radius: 4px;
+            background: #e5e7eb;
+            border-radius: 8px;
             overflow: hidden;
+            border: 1px solid #e5e7eb;
         }
 
         .time-column {
-            background: #f8f8f8;
+            background: #f9fafb;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .time-column-header {
+            background: #f3f4f6;
+            height: 40px;
+            border-bottom: 2px solid #d1d5db;
         }
 
         .time-slot {
-            background: #fff;
-            padding: 0.25rem 0.5rem;
-            font-size: 0.7rem;
-            color: #666;
+            background: #ffffff;
+            padding: 0 0.5rem;
+            font-size: 0.75rem;
+            color: #6b7280;
             text-align: right;
-            height: 60px;
+            height: 30px;
             display: flex;
             align-items: center;
             justify-content: flex-end;
-            border-bottom: 1px solid #f0f0f0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .time-slot.hour-mark {
+            font-weight: 600;
+            color: #374151;
+            background: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
         }
 
         .day-column {
-            background: #fff;
+            background: #ffffff;
             position: relative;
-            min-height: 840px;
+            display: flex;
+            flex-direction: column;
         }
 
         .day-header {
-            background: #f8f8f8;
+            background: #f3f4f6;
             padding: 0.75rem;
             text-align: center;
             font-weight: 600;
-            font-size: 0.85rem;
-            border-bottom: 1px solid #e0e0e0;
+            font-size: 0.875rem;
+            color: #374151;
             position: sticky;
             top: 0;
             z-index: 10;
+            border-bottom: 2px solid #d1d5db;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .day-content {
+            position: relative;
+            flex: 1;
+            min-height: 840px;
+            background-image: 
+                repeating-linear-gradient(
+                    to bottom,
+                    transparent 0,
+                    transparent 29px,
+                    #f3f4f6 29px,
+                    #f3f4f6 30px
+                ),
+                repeating-linear-gradient(
+                    to bottom,
+                    transparent 0,
+                    transparent 59px,
+                    #e5e7eb 59px,
+                    #e5e7eb 60px
+                );
         }
 
         .course-block {
             position: absolute;
             left: 2px;
             right: 2px;
-            padding: 0.4rem 0.5rem;
-            border-radius: 3px;
+            padding: 0.5rem 0.5rem;
+            border-radius: 4px;
             font-size: 0.7rem;
-            color: #fff;
+            color: #ffffff;
             font-weight: 500;
             cursor: pointer;
             overflow: hidden;
             z-index: 5;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
             line-height: 1.3;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            animation: slide-in 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slide-in {
+            from {
+                opacity: 0;
+                transform: translateY(-10px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes slide-in-preview {
+            from {
+                opacity: 0;
+                transform: translateY(-10px) scale(0.95);
+            }
+            to {
+                opacity: 0.7;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        .course-block > div {
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .course-block:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 6;
+        }
+
+        .course-block.updating {
+            animation: highlight-update 0.6s ease-out;
+        }
+
+        .course-block.preview-block {
+            opacity: 0.7;
+            border: 2px dashed rgba(255, 255, 255, 0.6);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+            animation: slide-in-preview 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes highlight-update {
+            0%, 100% {
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            }
+            50% {
+                box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.4), 0 4px 12px rgba(59, 130, 246, 0.3);
+            }
         }
 
         .empty-state {
             text-align: center;
-            padding: 3rem;
-            color: #999;
+            padding: 3rem 1.5rem;
+            color: #9ca3af;
+            font-size: 0.9rem;
         }
 
         .loading {
             text-align: center;
             padding: 2rem;
-            color: #666;
+            color: #6b7280;
+            font-size: 0.9rem;
         }
 
         /* Modal styles */
@@ -263,10 +560,11 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.6);
             z-index: 1000;
             align-items: center;
             justify-content: center;
+            backdrop-filter: blur(4px);
         }
 
         .modal.active {
@@ -274,35 +572,71 @@
         }
 
         .modal-content {
-            background: #fff;
-            border-radius: 8px;
+            background: #ffffff;
+            border-radius: 12px;
             padding: 2rem;
-            max-width: 600px;
-            max-height: 80vh;
+            max-width: 650px;
+            max-height: 85vh;
             overflow-y: auto;
             width: 90%;
             position: relative;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .modal-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .modal-content::-webkit-scrollbar-track {
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+
+        .modal-content::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 4px;
         }
 
         .modal-header {
             margin-bottom: 1.5rem;
+            padding-right: 2rem;
         }
 
         .modal-header h3 {
-            font-size: 1.25rem;
+            font-size: 1.375rem;
             font-weight: 600;
             margin-bottom: 0.5rem;
+            color: #111827;
+            letter-spacing: -0.01em;
+        }
+
+        .modal-header p {
+            color: #6b7280;
+            font-size: 0.9rem;
         }
 
         .close-btn {
             position: absolute;
-            top: 1rem;
-            right: 1rem;
-            background: none;
+            top: 1.25rem;
+            right: 1.25rem;
+            background: #f3f4f6;
             border: none;
             font-size: 1.5rem;
             cursor: pointer;
-            color: #666;
+            color: #6b7280;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            line-height: 1;
+        }
+
+        .close-btn:hover {
+            background: #e5e7eb;
+            color: #374151;
         }
 
         .section-list {
@@ -313,51 +647,61 @@
 
         .section-item {
             padding: 1rem;
-            border: 1px solid #e0e0e0;
-            border-radius: 4px;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 8px;
             cursor: pointer;
-            transition: background-color 0.15s;
+            transition: all 0.2s ease;
+            background: #ffffff;
         }
 
         .section-item:hover {
-            background-color: #f8f8f8;
+            background-color: #f9fafb;
+            border-color: #d1d5db;
         }
 
         .section-item.selected {
-            background-color: #e8f4f8;
-            border-color: #0066cc;
+            background-color: #eff6ff;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
         .lecture-time {
             font-weight: 600;
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.375rem;
+            color: #111827;
+            font-size: 0.9rem;
         }
 
         .lecture-meta {
             font-size: 0.85rem;
-            color: #666;
+            color: #6b7280;
+            margin-top: 0.25rem;
         }
 
         .add-btn {
-            margin-top: 1rem;
-            padding: 0.75rem 1.5rem;
-            background: #0066cc;
-            color: #fff;
+            margin-top: 1.5rem;
+            padding: 0.875rem 1.5rem;
+            background: #3b82f6;
+            color: #ffffff;
             border: none;
-            border-radius: 4px;
-            font-size: 0.9rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
             font-weight: 600;
             cursor: pointer;
             width: 100%;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
 
         .add-btn:hover {
-            background: #0052a3;
+            background: #2563eb;
+            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
         }
 
         .add-btn:disabled {
-            background: #ccc;
+            background: #d1d5db;
             cursor: not-allowed;
+            box-shadow: none;
         }
 
         .conflict-badge {
@@ -367,11 +711,11 @@
         }
 
         .conflict-free {
-            color: #008855;
+            color: #059669;
         }
 
         .conflict-warning {
-            color: #cc0000;
+            color: #dc2626;
         }
 
         @media (max-width: 1024px) {
@@ -385,43 +729,409 @@
         }
 
         @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
             .day-label {
                 display: none;
             }
             .day-abbr {
                 display: block;
             }
+            .search-section,
+            .selected-courses {
+                padding: 1rem;
+            }
+        }
+
+        /* Schedule Optimizer Styles */
+
+        .optimizer-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .preference-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .preference-group label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .radio-option input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #3b82f6;
+        }
+
+        .radio-option label {
+            font-size: 0.875rem;
+            color: #374151;
+            cursor: pointer;
+            font-weight: normal;
+        }
+
+        .time-inputs {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .time-inputs select {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-family: inherit;
+            background: #ffffff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .time-inputs select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .optimizer-status {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            border-radius: 6px;
+            background: #f9fafb;
+            transition: all 0.2s ease;
+        }
+
+        .optimizer-status.loading {
+            color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .optimizer-status.error {
+            color: #dc2626;
+            background: #fee2e2;
+        }
+
+        .optimizer-status.success {
+            color: #059669;
+            background: #d1fae5;
+        }
+
+        .optimized-schedules {
+            margin-top: 1.5rem;
+        }
+
+        .schedule-option {
+            background: #f9fafb;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .schedule-option:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .schedule-option.selected:not(.applied) {
+            background-color: #eff6ff;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .schedule-option.applied {
+            background-color: #f0fdf4;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+        }
+
+        .schedule-option.selected {
+            background-color: #eff6ff;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2), 0 4px 12px rgba(59, 130, 246, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .schedule-option.applying {
+            animation: pulse-apply 0.6s ease-out;
+        }
+
+        @keyframes pulse-apply {
+            0% {
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2), 0 4px 12px rgba(59, 130, 246, 0.15);
+            }
+            50% {
+                box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.3), 0 8px 20px rgba(59, 130, 246, 0.25);
+            }
+            100% {
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2), 0 4px 12px rgba(59, 130, 246, 0.15);
+            }
+        }
+
+        .schedule-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .schedule-score {
+            font-weight: 600;
+            color: #059669;
+            font-size: 0.9rem;
+        }
+
+        .schedule-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .schedule-actions button {
+            flex: 1;
+        }
+
+        .apply-schedule-btn {
+            flex: 1;
+            padding: 0.625rem 1rem;
+            background: #3b82f6;
+            color: #ffffff;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .apply-schedule-btn:hover {
+            background: #2563eb;
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+        }
+
+        .apply-schedule-btn.applied {
+            background: #10b981;
+        }
+
+        .apply-schedule-btn.applied:hover {
+            background: #059669;
+        }
+
+        .remove-schedule-btn {
+            flex: 1;
+            padding: 0.625rem 1rem;
+            background: #f3f4f6;
+            color: #374151;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .remove-schedule-btn:hover {
+            background: #e5e7eb;
+            border-color: #d1d5db;
+        }
+
+        .schedule-actions button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .applied-badge {
+            display: inline-block;
+            background: #10b981;
+            color: #ffffff;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            margin-left: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            animation: fade-in 0.3s ease-out;
+        }
+
+        @keyframes fade-in {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .schedule-courses-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .schedule-course-item {
+            font-size: 0.875rem;
+            color: #374151;
+            padding: 0.5rem;
+            background: #ffffff;
+            border-radius: 4px;
+        }
+
+        .loading-optimization {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+            font-size: 0.9rem;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Gaucho Guardian</h1>
-        <p class="subtitle">Course Schedule Planner</p>
-    </div>
-
     <div class="main-container">
         <div class="sidebar">
             <div class="search-section">
-                <h3 class="section-title">Search Courses</h3>
-                <input type="text" id="searchInput" placeholder="Search by course ID, title, or department...">
-                <select id="departmentSelect">
-                    <option value="">All Departments</option>
-                </select>
-                <div class="filter-checkbox">
-                    <input type="checkbox" id="filterBySchedule">
-                    <label for="filterBySchedule">Show only classes with no time conflicts</label>
+                <div class="section-header" onclick="toggleSection('searchSection')">
+                    <h3 class="section-title">Search Courses</h3>
+                    <button class="collapse-toggle" id="searchSectionToggle" aria-label="Toggle search section" onclick="event.stopPropagation(); toggleSection('searchSection');">▼</button>
                 </div>
-                <div id="filterStatus" style="font-size: 0.8rem; color: #666; margin-top: 0.25rem; min-height: 1.2rem;"></div>
-                <div class="search-results" id="searchResults">
-                    <div class="empty-state">Start typing to search for courses</div>
+                <div class="section-content" id="searchSection">
+                    <input type="text" id="searchInput" placeholder="Search by course ID, title, or department...">
+                    <select id="departmentSelect">
+                        <option value="">All Departments</option>
+                    </select>
+                    <div class="filter-checkbox">
+                        <input type="checkbox" id="filterBySchedule" checked>
+                        <label for="filterBySchedule">Show only classes with no time conflicts</label>
+                    </div>
+                    <div id="filterStatus"></div>
+                    <div class="search-results" id="searchResults">
+                        <div class="empty-state">Loading courses...</div>
+                    </div>
                 </div>
             </div>
 
             <div class="selected-courses">
-                <h3 class="section-title">Selected Courses</h3>
-                <div id="selectedCoursesList">
-                    <div class="empty-state" style="padding: 1rem; font-size: 0.85rem;">No courses selected</div>
+                <div class="section-header" onclick="toggleSection('selectedCoursesSection')">
+                    <h3 class="section-title">Selected Courses</h3>
+                    <button class="collapse-toggle" id="selectedCoursesSectionToggle" aria-label="Toggle selected courses section">▼</button>
+                </div>
+                <div class="section-content" id="selectedCoursesSection">
+                    <div id="selectedCoursesList">
+                        <div class="empty-state" style="padding: 1.5rem 1rem;">No courses selected</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="schedule-optimizer">
+                <div class="section-header" onclick="toggleSection('optimizerSection')">
+                    <h3 class="section-title">Schedule Optimizer</h3>
+                    <button class="collapse-toggle" id="optimizerSectionToggle" aria-label="Toggle optimizer section" onclick="event.stopPropagation(); toggleSection('optimizerSection');">▼</button>
+                </div>
+                <div class="section-content" id="optimizerSection">
+                    <div class="optimizer-controls">
+                        <div class="preference-group">
+                            <label>Schedule Layout</label>
+                            <div class="radio-group">
+                                <div class="radio-option">
+                                    <input type="radio" id="spreadCentered" name="spreadPreference" value="centered" checked>
+                                    <label for="spreadCentered">Centered</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="spreadSpread" name="spreadPreference" value="spread">
+                                    <label for="spreadSpread">Spread Out</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="preference-group">
+                            <label>Time Preferences</label>
+                            <div class="time-inputs" style="margin-bottom: 0.75rem;">
+                                <select id="preferredStartTime">
+                                </select>
+                                <span>to</span>
+                                <select id="preferredEndTime">
+                                </select>
+                            </div>
+                            <div class="radio-group" style="margin-top: 0.5rem;">
+                                <div class="radio-option">
+                                    <input type="radio" id="timeMorning" name="preferredTimeOfDay" value="morning">
+                                    <label for="timeMorning">Morning</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="timeAfternoon" name="preferredTimeOfDay" value="afternoon">
+                                    <label for="timeAfternoon">Afternoon</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="timeEvening" name="preferredTimeOfDay" value="evening">
+                                    <label for="timeEvening">Evening</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="timeNone" name="preferredTimeOfDay" value="" checked>
+                                    <label for="timeNone">Any time</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="preference-group">
+                            <label>Schedule Structure</label>
+                            <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
+                                <div class="filter-checkbox" style="margin: 0; flex: 1; min-width: 160px;">
+                                    <input type="checkbox" id="prioritizeFreeDays">
+                                    <label for="prioritizeFreeDays" style="font-size: 0.8rem;">More free days</label>
+                                </div>
+                                <div class="filter-checkbox" style="margin: 0; flex: 1; min-width: 160px;">
+                                    <input type="checkbox" id="minimizeGaps">
+                                    <label for="minimizeGaps" style="font-size: 0.8rem;">Minimize gaps</label>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <label style="font-size: 0.8rem; color: #6b7280; margin: 0; line-height: 1.5; white-space: nowrap;">Max per day:</label>
+                                <select id="maxClassesPerDay" style="max-width: 120px; padding: 0.4rem; border: 1.5px solid #e5e7eb; border-radius: 6px; font-size: 0.8rem; line-height: 1.5; vertical-align: middle;">
+                                    <option value="">No limit</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="optimizedSchedules" class="optimized-schedules" style="display: none;">
+                        <h4 class="section-title" style="margin-top: 1.5rem; margin-bottom: 1rem;">Optimized Schedules</h4>
+                        <div id="scheduleOptions"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -429,6 +1139,9 @@
         <div class="calendar-container">
             <div class="calendar-header">
                 <h2>Weekly Schedule</h2>
+                <div id="previewIndicator" style="display: none; font-size: 0.875rem; color: #3b82f6; font-weight: 500; margin-top: 0.5rem;">
+                    ⚠ Preview Mode - Apply to save changes
+                </div>
             </div>
             <div class="calendar-wrapper" id="calendarWrapper"></div>
         </div>
@@ -448,33 +1161,178 @@
         let searchTimeout = null;
         let currentCourse = null;
         let currentLecture = null;
-        let selectedLectureIndex = null;
+        let selectedLectureIndex = null; // Single selected lecture index (only one allowed)
         let selectedSectionIndex = null;
         let conflictFreeCombinations = [];
         let courseConflictData = {}; // Map courseId -> conflictFreeCombinations
+
+        // Cookie helper functions
+        function setCookie(name, value, days = 365) {
+            const expires = new Date();
+            expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+            document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=/`;
+        }
+
+        function getCookie(name) {
+            const nameEQ = name + "=";
+            const ca = document.cookie.split(';');
+            for (let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) === 0) {
+                    return decodeURIComponent(c.substring(nameEQ.length, c.length));
+                }
+            }
+            return null;
+        }
+
+        // Save selected courses to cookie
+        function saveSelectedCoursesToCookie() {
+            try {
+                const coursesJson = JSON.stringify(selectedCourses);
+                setCookie('selectedCourses', coursesJson);
+            } catch (error) {
+                console.error('Error saving courses to cookie:', error);
+            }
+        }
+
+        // Load selected courses from cookie
+        function loadSelectedCoursesFromCookie() {
+            try {
+                const coursesJson = getCookie('selectedCourses');
+                if (coursesJson) {
+                    const loadedCourses = JSON.parse(coursesJson);
+                    if (Array.isArray(loadedCourses) && loadedCourses.length > 0) {
+                        selectedCourses = loadedCourses;
+                        masterSelectedCourses = JSON.parse(JSON.stringify(loadedCourses)); // Initialize master schedule
+                        return true;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading courses from cookie:', error);
+            }
+            return false;
+        }
+
+        // Section collapse/expand functionality
+        function toggleSection(sectionId) {
+            const content = document.getElementById(sectionId);
+            const toggle = document.getElementById(sectionId + 'Toggle');
+            
+            if (!content || !toggle) {
+                return;
+            }
+            
+            // Find parent section element
+            const parentSection = content.closest('.search-section, .selected-courses, .schedule-optimizer');
+            
+            const isCollapsed = content.classList.contains('collapsed');
+            
+            if (isCollapsed) {
+                content.classList.remove('collapsed');
+                toggle.classList.remove('collapsed');
+                if (parentSection) {
+                    parentSection.classList.remove('collapsed');
+                }
+            } else {
+                content.classList.add('collapsed');
+                toggle.classList.add('collapsed');
+                if (parentSection) {
+                    parentSection.classList.add('collapsed');
+                }
+            }
+            
+            // Save state to localStorage
+            try {
+                const state = JSON.parse(localStorage.getItem('sectionStates') || '{}');
+                state[sectionId] = !isCollapsed;
+                localStorage.setItem('sectionStates', JSON.stringify(state));
+            } catch (e) {
+                console.error('Error saving section state:', e);
+            }
+        }
+
+        // Load saved section states
+        function loadSectionStates() {
+            try {
+                const state = JSON.parse(localStorage.getItem('sectionStates') || '{}');
+                Object.keys(state).forEach(sectionId => {
+                    if (state[sectionId]) {
+                        const content = document.getElementById(sectionId);
+                        const toggle = document.getElementById(sectionId + 'Toggle');
+                        if (content && toggle) {
+                            content.classList.add('collapsed');
+                            toggle.classList.add('collapsed');
+                            // Also add collapsed class to parent section
+                            const parentSection = content.closest('.search-section, .selected-courses, .schedule-optimizer');
+                            if (parentSection) {
+                                parentSection.classList.add('collapsed');
+                            }
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error('Error loading section states:', e);
+            }
+        }
 
         // Initialize
         async function init() {
             await loadDepartments();
             initCalendar();
+            initTimeDropdowns();
+            
+            // Load saved courses from cookie (this also initializes masterSelectedCourses)
+            const coursesLoaded = loadSelectedCoursesFromCookie();
+            
+            // Load saved section states
+            setTimeout(loadSectionStates, 100);
             
             document.getElementById('searchInput').addEventListener('input', handleSearch);
             document.getElementById('departmentSelect').addEventListener('change', handleSearch);
             document.getElementById('filterBySchedule').addEventListener('change', handleSearch);
             
+            // Add event listeners for automatic optimization
+            document.querySelectorAll('input[name="spreadPreference"]').forEach(radio => {
+                radio.addEventListener('change', autoOptimize);
+            });
+            document.getElementById('preferredStartTime').addEventListener('change', () => {
+                updateEndTimeDropdown();
+                autoOptimize();
+            });
+            document.getElementById('preferredEndTime').addEventListener('change', autoOptimize);
+            document.getElementById('prioritizeFreeDays').addEventListener('change', autoOptimize);
+            document.getElementById('minimizeGaps').addEventListener('change', autoOptimize);
+            document.getElementById('maxClassesPerDay').addEventListener('change', autoOptimize);
+            document.querySelectorAll('input[name="preferredTimeOfDay"]').forEach(radio => {
+                radio.addEventListener('change', autoOptimize);
+            });
+            
             // Helper to trigger re-search if filter is active
             function triggerSearchIfFiltered() {
                 if (document.getElementById('filterBySchedule').checked) {
-                    const query = document.getElementById('searchInput').value.trim();
-                    const department = document.getElementById('departmentSelect').value;
-                    if (query || department) {
-                        handleSearch();
-                    }
+                    handleSearch();
                 }
             }
             
             // Store original functions
             window.triggerSearchIfFiltered = triggerSearchIfFiltered;
+            
+            // If courses were loaded, update the UI after a brief delay to ensure calendar is ready
+            if (coursesLoaded && selectedCourses.length > 0) {
+                setTimeout(() => {
+                    updateSelectedCoursesList();
+                    updateCalendar();
+                }, 100);
+            }
+            
+            // Automatically load all courses on page load
+            handleSearch();
+            
+            // Auto-optimize on initial load if courses are already selected
+            if (coursesLoaded && selectedCourses.length > 0) {
+                setTimeout(autoOptimize, 1000); // Small delay to ensure everything is loaded
+            }
         }
 
         async function loadDepartments() {
@@ -493,18 +1351,92 @@
             }
         }
 
+        function formatTime12HourWithMinutes(timeStr) {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            const period = hours >= 12 ? 'PM' : 'AM';
+            const displayHour = hours === 0 ? 12 : (hours > 12 ? hours - 12 : hours);
+            return `${displayHour}:${minutes.toString().padStart(2, '0')} ${period}`;
+        }
+
+        function updateEndTimeDropdown() {
+            const startSelect = document.getElementById('preferredStartTime');
+            const endSelect = document.getElementById('preferredEndTime');
+            const selectedStartTime = startSelect.value;
+            
+            // Clear existing options
+            endSelect.innerHTML = '';
+            
+            if (!selectedStartTime) {
+                // If no start time selected, show all options
+                for (let hour = 8; hour <= 22; hour++) {
+                    const time24 = `${hour.toString().padStart(2, '0')}:00`;
+                    const time12 = formatTime12HourWithMinutes(time24);
+                    const endOption = document.createElement('option');
+                    endOption.value = time24;
+                    endOption.textContent = time12;
+                    if (hour === 15) {
+                        endOption.selected = true;
+                    }
+                    endSelect.appendChild(endOption);
+                }
+                return;
+            }
+            
+            // Parse start time to get the hour
+            const [startHour] = selectedStartTime.split(':').map(Number);
+            
+            // Only show times after the start time
+            for (let hour = startHour + 1; hour <= 22; hour++) {
+                const time24 = `${hour.toString().padStart(2, '0')}:00`;
+                const time12 = formatTime12HourWithMinutes(time24);
+                const endOption = document.createElement('option');
+                endOption.value = time24;
+                endOption.textContent = time12;
+                // Select first available option or default to 15:00 if it's still valid
+                if (hour === Math.max(startHour + 1, 15) && hour <= 15) {
+                    endOption.selected = true;
+                }
+                endSelect.appendChild(endOption);
+            }
+            
+            // If no options were added (start time is 10 PM or later), select the first option (which will be empty)
+            if (endSelect.options.length === 0) {
+                // This shouldn't happen since we always have at least one option, but handle it gracefully
+                endSelect.value = '';
+            }
+        }
+
+        function initTimeDropdowns() {
+            const startSelect = document.getElementById('preferredStartTime');
+            const endSelect = document.getElementById('preferredEndTime');
+            
+            // Generate hourly options from 8 AM to 10 PM for start time
+            for (let hour = 8; hour <= 22; hour++) {
+                const time24 = `${hour.toString().padStart(2, '0')}:00`;
+                const time12 = formatTime12HourWithMinutes(time24);
+                
+                const startOption = document.createElement('option');
+                startOption.value = time24;
+                startOption.textContent = time12;
+                if (hour === 10) {
+                    startOption.selected = true; // Default to 10:00 AM
+                }
+                startSelect.appendChild(startOption);
+            }
+            
+            // Initialize end time dropdown
+            updateEndTimeDropdown();
+            
+            // Add event listener to update end time when start time changes
+            startSelect.addEventListener('change', updateEndTimeDropdown);
+        }
+
         async function handleSearch() {
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(async () => {
                 const query = document.getElementById('searchInput').value.trim();
                 const department = document.getElementById('departmentSelect').value;
                 const filterBySchedule = document.getElementById('filterBySchedule').checked;
-                
-                if (!query && !department) {
-                    document.getElementById('searchResults').innerHTML = 
-                        '<div class="empty-state">Start typing to search for courses</div>';
-                    return;
-                }
                 
                 document.getElementById('searchResults').innerHTML = 
                     '<div class="loading">Searching...</div>';
@@ -567,13 +1499,17 @@
                 }
             });
             
-            container.innerHTML = courses.map(course => `
+            container.innerHTML = courses.map(course => {
+                // courseId already includes subject area (e.g., "CMPSC 16"), so just use it directly
+                const displayCode = course.courseId;
+                return `
                 <div class="course-item" onclick="openCourse('${course.courseId.replace(/'/g, "\\'")}')">
-                    <div class="course-code">${course.subjectArea} ${course.courseId}</div>
+                    <div class="course-code">${displayCode}</div>
                     <div class="course-title">${course.title}</div>
                     <div class="course-meta">${course.units || 'N/A'} units</div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
 
         async function openCourse(courseId) {
@@ -600,7 +1536,7 @@
                 
                 currentCourse = course;
                 currentLecture = null;
-                selectedLectureIndex = null;
+                selectedLectureIndex = null; // Reset selected lecture
                 selectedSectionIndex = null;
                 
                 showSectionModal();
@@ -641,81 +1577,108 @@
             
             let html = `
                 <div class="modal-header">
-                    <h3>${currentCourse.subjectArea} ${currentCourse.courseId}: ${currentCourse.title}</h3>
-                    <p>Select a lecture${sections.length > 0 ? ' and section' : ''}</p>
+                    <h3>${currentCourse.courseId}: ${currentCourse.title}</h3>
+                    <p>Select one lecture${sections.length > 0 ? ' and optionally a section' : ''}</p>
                 </div>
             `;
             
-            // Auto-select first lecture if none selected
-            if (selectedLectureIndex === null && lectures.length > 0) {
+            // Auto-select first lecture if none selected (for single lecture courses)
+            if (selectedLectureIndex === null && lectures.length === 1) {
                 selectedLectureIndex = 0;
-                currentLecture = lectures[0];
             }
             
-            // Show all lectures if multiple exist
-            if (lectures.length > 1) {
-                html += '<div style="margin-bottom: 1rem;"><strong>Lectures:</strong></div>';
+            // Show all lectures with radio buttons (single selection)
+            if (lectures.length > 0) {
+                html += '<div style="margin-bottom: 1rem; color: #374151; font-size: 0.9rem;"><strong>Lectures (select one):</strong></div>';
                 html += '<div class="section-list" style="margin-bottom: 1.5rem;">';
                 lectures.forEach((lecture, idx) => {
                     const lectureTimeStr = lecture.times && lecture.times.length > 0
-                        ? lecture.times.map(t => `${t.days} ${t.startTime}-${t.endTime}`).join(', ')
+                        ? lecture.times.map(t => `${t.days} ${formatTime12Hour(t.startTime)}-${formatTime12Hour(t.endTime)}`).join(', ')
                         : 'Time TBA';
-                    const isSelected = idx === selectedLectureIndex ? 'selected' : '';
+                    const isSelected = selectedLectureIndex === idx;
                     const lectureIsConflictFree = isLectureConflictFree(idx);
                     const conflictBadge = filterBySchedule && hasSelectedCourses 
-                        ? (lectureIsConflictFree ? '<span style="color: #008855; font-size: 0.75rem; margin-left: 0.5rem;">✓ No conflicts</span>' 
-                                          : '<span style="color: #cc0000; font-size: 0.75rem; margin-left: 0.5rem;">⚠ Conflicts</span>')
+                        ? (lectureIsConflictFree ? '<span style="color: #059669; font-size: 0.75rem; margin-left: 0.5rem; font-weight: 500;">✓ No conflicts</span>' 
+                                          : '<span style="color: #dc2626; font-size: 0.75rem; margin-left: 0.5rem; font-weight: 500;">⚠ Conflicts</span>')
                         : '';
                     const opacity = (filterBySchedule && hasSelectedCourses && !lectureIsConflictFree) ? '0.6' : '1';
                     
                     html += `
-                        <div class="section-item ${isSelected}" onclick="selectLecture(${idx})" style="opacity: ${opacity};">
-                            <div class="lecture-time">${lecture.section || 'Lecture'} ${conflictBadge}</div>
-                            <div class="lecture-meta">${lectureTimeStr}</div>
-                            <div class="lecture-meta">${lecture.instructor || 'TBA'}</div>
-                            <div class="lecture-meta">${lecture.enrolled || 0}/${lecture.maxEnroll || 0}</div>
+                        <div class="section-item ${isSelected ? 'selected' : ''}" onclick="selectLecture(${idx})" style="opacity: ${opacity}; cursor: pointer;">
+                            <div style="display: flex; align-items: start; gap: 0.75rem;">
+                                <input type="radio" name="lectureSelection" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation(); selectLecture(${idx})" style="margin-top: 0.25rem; cursor: pointer;">
+                                <div style="flex: 1;">
+                                    <div class="lecture-time">${lecture.section || 'Lecture'} ${conflictBadge}</div>
+                                    <div class="lecture-meta">${lectureTimeStr}</div>
+                                    <div class="lecture-meta">${lecture.instructor || 'TBA'}</div>
+                                    <div class="lecture-meta">${lecture.enrolled || 0}/${lecture.maxEnroll || 0}</div>
+                                </div>
+                            </div>
                         </div>
                     `;
                 });
                 html += '</div>';
             }
             
-            // Show selected lecture info
-            const displayLecture = currentLecture || lectures[selectedLectureIndex] || lectures[0];
-            if (displayLecture) {
-                const lectureTimeStr = displayLecture.times && displayLecture.times.length > 0
-                    ? displayLecture.times.map(t => `${t.days} ${t.startTime}-${t.endTime}`).join(', ')
+            // Show selected lecture summary
+            if (selectedLectureIndex !== null && selectedLectureIndex < lectures.length) {
+                const selectedLecture = lectures[selectedLectureIndex];
+                const lectureTimeStr = selectedLecture.times && selectedLecture.times.length > 0
+                    ? selectedLecture.times.map(t => `${t.days} ${formatTime12Hour(t.startTime)}-${formatTime12Hour(t.endTime)}`).join(', ')
                     : 'Time TBA';
-                
                 html += `
                     <div style="margin-bottom: 1.5rem; padding: 1rem; background: #e8f4f8; border-radius: 4px;">
-                        <strong>${lectures.length > 1 ? 'Selected ' : ''}Lecture:</strong><br>
-                        ${displayLecture.section || 'Lecture'} - ${lectureTimeStr}<br>
-                        ${displayLecture.instructor || 'TBA'} | ${displayLecture.enrolled || 0}/${displayLecture.maxEnroll || 0}
+                        <strong>Selected Lecture:</strong><br>
+                        ${selectedLecture.section || 'Lecture'} - ${lectureTimeStr}
                     </div>
                 `;
             }
             
-            // Show sections
-            if (sections.length > 0) {
-                html += '<div style="margin-bottom: 0.5rem;"><strong>Sections:</strong></div>';
+            // Show sections (optional - filtered to only show sections for selected lecture)
+            // Collect all sections from selected lecture
+            const availableSections = [];
+            const sectionToIndexMap = {}; // Map: section enrollCode -> index in sections array
+            
+            if (selectedLectureIndex !== null && selectedLectureIndex < lectures.length) {
+                const lecture = lectures[selectedLectureIndex];
+                if (lecture && lecture.sections) {
+                    lecture.sections.forEach(section => {
+                        // Find original index in sections array for conflict checking
+                        const originalIndex = sections.findIndex(s => s.enrollCode === section.enrollCode);
+                        sectionToIndexMap[section.enrollCode] = originalIndex >= 0 ? originalIndex : availableSections.length;
+                        availableSections.push({
+                            ...section,
+                            lectureIndex: selectedLectureIndex,
+                            originalIndex: originalIndex
+                        });
+                    });
+                }
+            }
+            
+            if (availableSections.length > 0) {
+                html += '<div style="margin-bottom: 0.75rem; color: #374151; font-size: 0.9rem;"><strong>Sections (optional - for selected lectures only):</strong></div>';
                 html += '<div class="section-list">';
-                const currentLectureIdx = selectedLectureIndex !== null ? selectedLectureIndex : (lectures.length > 0 ? 0 : null);
                 
-                sections.forEach((section, index) => {
+                availableSections.forEach((section, localIndex) => {
                     const timeStr = section.times && section.times.length > 0
-                        ? section.times.map(t => `${t.days} ${t.startTime}-${t.endTime}`).join(', ')
+                        ? section.times.map(t => `${t.days} ${formatTime12Hour(t.startTime)}-${formatTime12Hour(t.endTime)}`).join(', ')
                         : 'Time TBA';
-                    const isSelected = index === selectedSectionIndex ? 'selected' : '';
-                    const sectionIsConflictFree = isConflictFree(currentLectureIdx, index);
+                    const isSelected = section.enrollCode === (selectedSectionIndex !== null && sections[selectedSectionIndex] ? sections[selectedSectionIndex].enrollCode : null) ? 'selected' : '';
+                    // Check if section is conflict-free with its associated lecture
+                    const sectionIsConflictFree = section.lectureIndex !== undefined
+                        ? isConflictFree(section.lectureIndex, section.originalIndex)
+                        : true;
                     const conflictBadge = filterBySchedule && hasSelectedCourses 
-                        ? (sectionIsConflictFree ? '<span style="color: #008855; font-size: 0.75rem; margin-left: 0.5rem;">✓ No conflicts</span>' 
-                                          : '<span style="color: #cc0000; font-size: 0.75rem; margin-left: 0.5rem;">⚠ Conflicts</span>')
+                        ? (sectionIsConflictFree ? '<span style="color: #059669; font-size: 0.75rem; margin-left: 0.5rem; font-weight: 500;">✓ No conflicts</span>' 
+                                          : '<span style="color: #dc2626; font-size: 0.75rem; margin-left: 0.5rem; font-weight: 500;">⚠ Conflicts</span>')
                         : '';
                     const opacity = (filterBySchedule && hasSelectedCourses && !sectionIsConflictFree) ? '0.6' : '1';
                     
+                    // Find the original index in sections array for onclick
+                    const originalIndex = section.originalIndex >= 0 ? section.originalIndex : localIndex;
+                    
                     html += `
-                        <div class="section-item ${isSelected}" onclick="selectSection(${index})" style="opacity: ${opacity};">
+                        <div class="section-item ${isSelected}" data-section-index="${originalIndex}" onclick="selectSection(${originalIndex})" style="opacity: ${opacity};">
                             <div class="lecture-time">${section.section || 'Section'} ${conflictBadge}</div>
                             <div class="lecture-meta">${timeStr}</div>
                             <div class="lecture-meta">${section.instructor || 'TBA'}</div>
@@ -724,27 +1687,48 @@
                     `;
                 });
                 html += '</div>';
+            } else if (sections.length > 0 && selectedLectureIndex === null) {
+                html += '<div style="margin-bottom: 0.75rem; color: #6b7280; font-size: 0.85rem; font-style: italic;">Select a lecture to see available sections</div>';
+            } else if (sections.length === 0) {
+                html += '<div class="empty-state" style="padding: 1.5rem 1rem;">No sections available</div>';
             } else {
-                html += '<div class="empty-state" style="padding: 1rem;">No sections available</div>';
+                html += '<div class="empty-state" style="padding: 1.5rem 1rem;">No sections available for selected lecture</div>';
             }
             
-            html += `<button class="add-btn" onclick="addCourse()">Add Course</button>`;
+            html += `<button class="add-btn" onclick="addCourse()" ${selectedLectureIndex === null ? 'disabled' : ''}>
+                Add Lecture
+            </button>`;
             
             content.innerHTML = html;
             modal.classList.add('active');
         }
         
         function selectLecture(index) {
-            selectedLectureIndex = index;
-            currentLecture = currentCourse.lectureSections[index];
-            selectedSectionIndex = null; // Reset section selection when lecture changes
+            // Only allow one lecture selection at a time
+            const wasSelected = selectedLectureIndex === index;
+            if (wasSelected) {
+                // Deselect if clicking the same lecture
+                selectedLectureIndex = null;
+            } else {
+                // Select new lecture (automatically deselects previous)
+                selectedLectureIndex = index;
+            }
+            // Clear section selection when lecture changes (always clear when selecting/deselecting)
+            selectedSectionIndex = null;
             showSectionModal();
+        }
+        
+        function toggleLecture(index) {
+            // Legacy function for backwards compatibility - now just selects
+            selectLecture(index);
         }
 
         function selectSection(index) {
             selectedSectionIndex = index;
-            document.querySelectorAll('.section-item').forEach((item, i) => {
-                if (i === index) {
+            // Only select section items (not lecture items) by using data-section-index attribute
+            document.querySelectorAll('.section-item[data-section-index]').forEach((item) => {
+                const itemIndex = parseInt(item.getAttribute('data-section-index'));
+                if (itemIndex === index) {
                     item.classList.add('selected');
                 } else {
                     item.classList.remove('selected');
@@ -753,45 +1737,77 @@
         }
 
         async function addCourse() {
-            // Use selected lecture or fall back to first lecture
-            const lectureToUse = currentLecture || 
-                                (selectedLectureIndex !== null ? currentCourse.lectureSections[selectedLectureIndex] : null) ||
-                                (currentCourse.lectureSections && currentCourse.lectureSections[0]);
-            
-            if (!currentCourse || !lectureToUse) {
+            // Get selected lecture (only one allowed)
+            if (!currentCourse || selectedLectureIndex === null) {
                 alert('Error: Please select a lecture');
                 return;
             }
             
-            const section = (selectedSectionIndex !== null && currentCourse.sections) 
+            const lecture = {
+                ...currentCourse.lectureSections[selectedLectureIndex],
+                index: selectedLectureIndex
+            };
+            
+            const selectedSection = (selectedSectionIndex !== null && currentCourse.sections) 
                 ? currentCourse.sections[selectedSectionIndex] 
                 : null;
+            
+            // Find the section that belongs to this lecture (if a section was selected)
+            let sectionForThisLecture = null;
+            if (selectedSection) {
+                // Check if the selected section belongs to this lecture
+                if (lecture.sections && lecture.sections.some(s => s.enrollCode === selectedSection.enrollCode)) {
+                    sectionForThisLecture = selectedSection;
+                }
+            }
             
             try {
                 const response = await fetch('/api/section', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        lectureCode: lectureToUse.enrollCode,
-                        sectionCode: section ? section.enrollCode : null
+                        lectureCode: lecture.enrollCode,
+                        sectionCode: sectionForThisLecture ? sectionForThisLecture.enrollCode : null
                     })
                 });
                 const data = await response.json();
                 
                 if (data.success && data.course) {
-                    selectedCourses.push(data.course);
-                    updateSelectedCoursesList();
-                    updateCalendar();
-                    closeModal();
-                    // Re-search if filter is active
-                    if (window.triggerSearchIfFiltered) {
-                        window.triggerSearchIfFiltered();
+                    // Check if this lecture is already added (avoid duplicates)
+                    const alreadyAdded = selectedCourses.some(c => 
+                        c.courseId === data.course.courseId && 
+                        c.lecture.enrollCode === data.course.lecture.enrollCode
+                    );
+                    
+                    if (!alreadyAdded) {
+                        selectedCourses.push(data.course);
+                        
+                        // Auto-optimize after adding course
+                        autoOptimize();
+                        
+                        // Update master schedule and clear preview
+                        masterSelectedCourses = JSON.parse(JSON.stringify(selectedCourses));
+                        previewScheduleIndex = null;
+                        previewSelectedCourses = null;
+                        appliedScheduleIndex = null;
+                        
+                        updateSelectedCoursesList();
+                        updateCalendar();
+                        saveSelectedCoursesToCookie(); // Save to cookie
+                        closeModal();
+                        // Re-search if filter is active
+                        if (window.triggerSearchIfFiltered) {
+                            window.triggerSearchIfFiltered();
+                        }
+                    } else {
+                        alert('This lecture is already in your schedule.');
                     }
                 } else {
-                    alert('Error adding course: ' + (data.error || 'Unknown error'));
+                    alert('Error: Failed to add lecture. ' + (data.error || ''));
                 }
             } catch (error) {
-                alert('Error adding course: ' + error.message);
+                console.error('Error adding lecture:', error);
+                alert('Error: Failed to add lecture. Please try again.');
             }
         }
 
@@ -805,49 +1821,96 @@
         }
 
         function removeCourse(courseId, lectureCode) {
+            // Update master schedule and clear preview
             selectedCourses = selectedCourses.filter(c => 
                 !(c.courseId === courseId && c.lecture.enrollCode === lectureCode)
             );
+            masterSelectedCourses = JSON.parse(JSON.stringify(selectedCourses));
+            previewScheduleIndex = null;
+            previewSelectedCourses = null;
+            appliedScheduleIndex = null;
+            
             updateSelectedCoursesList();
             updateCalendar();
+            saveSelectedCoursesToCookie(); // Save to cookie
             // Re-search if filter is active
             if (window.triggerSearchIfFiltered) {
                 window.triggerSearchIfFiltered();
             }
+            // Auto-optimize after removing courses
+            autoOptimize();
         }
 
         function updateSelectedCoursesList() {
             const container = document.getElementById('selectedCoursesList');
             
             if (selectedCourses.length === 0) {
-                container.innerHTML = '<div class="empty-state" style="padding: 1rem; font-size: 0.85rem;">No courses selected</div>';
+                container.innerHTML = '<div class="empty-state" style="padding: 1.5rem 1rem;">No courses selected</div>';
                 return;
             }
             
-            container.innerHTML = selectedCourses.map(course => {
-                const lectureTime = course.lecture.times.map(t => 
-                    `${t.days} ${t.startTime}-${t.endTime}`
-                ).join(', ');
-                const sectionTime = course.section ? course.section.times.map(t => 
-                    `${t.days} ${t.startTime}-${t.endTime}`
-                ).join(', ') : 'No section';
+            // Group courses by courseId to show multiple lectures clearly
+            const coursesByCourseId = {};
+            selectedCourses.forEach(course => {
+                const courseId = course.courseId;
+                if (!coursesByCourseId[courseId]) {
+                    coursesByCourseId[courseId] = [];
+                }
+                coursesByCourseId[courseId].push(course);
+            });
+            
+            container.innerHTML = Object.entries(coursesByCourseId).map(([courseId, courses]) => {
+                const firstCourse = courses[0];
+                const hasMultipleLectures = courses.length > 1;
                 
                 return `
                     <div class="selected-course">
                         <div class="selected-course-header">
-                            <div>
-                                <div style="font-weight: 600; font-size: 0.9rem;">${course.subjectArea} ${course.courseId}</div>
-                                <div style="font-size: 0.8rem; color: #666; margin-top: 0.25rem;">${course.title}</div>
-                                <div style="font-size: 0.75rem; color: #666; margin-top: 0.25rem;">
-                                    LEC: ${lectureTime}<br>
-                                    SEC: ${sectionTime}
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; font-size: 0.95rem; color: #111827; margin-bottom: 0.375rem;">
+                                    ${firstCourse.courseId}${hasMultipleLectures ? ` <span style="color: #6b7280; font-weight: 500;">(${courses.length} lectures)</span>` : ''}
                                 </div>
+                                <div style="font-size: 0.85rem; color: #6b7280; margin-bottom: 0.75rem;">${firstCourse.title}</div>
+                                ${courses.map(course => {
+                                    const lectureTime = course.lecture.times && course.lecture.times.length > 0
+                                        ? course.lecture.times.map(t => 
+                                            `${t.days} ${formatTime12Hour(t.startTime)}-${formatTime12Hour(t.endTime)}`
+                                          ).join(', ')
+                                        : 'Time TBA';
+                                    const sectionTime = course.section && course.section.times && course.section.times.length > 0
+                                        ? course.section.times.map(t => 
+                                            `${t.days} ${formatTime12Hour(t.startTime)}-${formatTime12Hour(t.endTime)}`
+                                          ).join(', ')
+                                        : 'No section';
+                                    const lectureLabel = course.lecture.section || 'Lecture';
+                                    
+                                    return `
+                                        <div style="font-size: 0.8rem; color: #374151; margin-top: 0.75rem; padding: 0.75rem; background: #ffffff; border-radius: 6px; border: 1px solid #e5e7eb; position: relative;">
+                                            <div style="margin-bottom: 0.375rem;">
+                                                <strong style="color: #2563eb;">${lectureLabel}:</strong> 
+                                                <span style="color: #6b7280;">${lectureTime}</span>
+                                            </div>
+                                            <div style="color: #6b7280; font-size: 0.75rem;">
+                                                Section: ${sectionTime}
+                                            </div>
+                                            <button class="remove-btn" onclick="removeCourse('${course.courseId}', '${course.lecture.enrollCode}')" style="position: absolute; top: 0.75rem; right: 0.75rem;">Remove</button>
+                                        </div>
+                                    `;
+                                }).join('')}
                             </div>
-                            <button class="remove-btn" onclick="removeCourse('${course.courseId}', '${course.lecture.enrollCode}')">Remove</button>
                         </div>
                     </div>
                 `;
             }).join('');
+        }
+
+        // Convert 24-hour time to 12-hour format with AM/PM
+        function formatTime12Hour(timeStr) {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            const period = hours >= 12 ? 'PM' : 'AM';
+            const displayHour = hours === 0 ? 12 : (hours > 12 ? hours - 12 : hours);
+            const displayMinutes = minutes === 0 ? '' : `:${minutes.toString().padStart(2, '0')}`;
+            return `${displayHour}${displayMinutes} ${period}`;
         }
 
         function initCalendar() {
@@ -855,8 +1918,16 @@
             wrapper.innerHTML = '';
             
             const times = [];
-            for (let hour = 8; hour <= 20; hour++) {
-                times.push(`${hour.toString().padStart(2, '0')}:00`);
+            for (let hour = 8; hour <= 22; hour++) {
+                // Add :00 time slot
+                const time24_00 = `${hour.toString().padStart(2, '0')}:00`;
+                times.push({ time24: time24_00, time12: formatTime12Hour(time24_00), isHour: true });
+                
+                // Add :30 time slot (except for 10:00 PM which is the last slot)
+                if (hour < 22) {
+                    const time24_30 = `${hour.toString().padStart(2, '0')}:30`;
+                    times.push({ time24: time24_30, time12: formatTime12Hour(time24_30), isHour: false });
+                }
             }
             
             const days = [
@@ -867,82 +1938,52 @@
                 { full: 'Friday', abbr: 'Fri', code: 'F' }
             ];
             
+            // Create time column
             const timeColumn = document.createElement('div');
             timeColumn.className = 'time-column';
-            timeColumn.appendChild(document.createElement('div')).className = 'day-header';
-            times.forEach(time => {
+            
+            // Time column header (empty spacer)
+            const timeHeader = document.createElement('div');
+            timeHeader.className = 'time-column-header';
+            timeColumn.appendChild(timeHeader);
+            
+            // Time slots
+            times.forEach(({ time12, isHour }) => {
                 const timeSlot = document.createElement('div');
-                timeSlot.className = 'time-slot';
-                timeSlot.textContent = time;
+                timeSlot.className = 'time-slot' + (isHour ? ' hour-mark' : '');
+                timeSlot.textContent = isHour ? time12 : '';
                 timeColumn.appendChild(timeSlot);
             });
             wrapper.appendChild(timeColumn);
             
+            // Create day columns
             days.forEach(day => {
                 const dayColumn = document.createElement('div');
                 dayColumn.className = 'day-column';
-                dayColumn.id = `day-${day.code}`;
+                
+                // Day header
                 const header = document.createElement('div');
                 header.className = 'day-header';
                 header.innerHTML = `<span class="day-label">${day.full}</span><span class="day-abbr">${day.abbr}</span>`;
                 dayColumn.appendChild(header);
+                
+                // Day content container for course blocks
+                const dayContent = document.createElement('div');
+                dayContent.className = 'day-content';
+                dayContent.id = `day-${day.code}`;
+                dayColumn.appendChild(dayContent);
+                
                 wrapper.appendChild(dayColumn);
             });
         }
 
         function updateCalendar() {
-            document.querySelectorAll('.course-block').forEach(block => block.remove());
-            
-            const colors = [
-                '#0066cc', '#008855', '#cc6600', '#9900cc', '#cc0066',
-                '#0099cc', '#66cc00', '#cc9900', '#cc0099', '#0099ff'
-            ];
-            
-            selectedCourses.forEach((course, courseIndex) => {
-                const color = colors[courseIndex % colors.length];
-                const courseLabel = `${course.subjectArea} ${course.courseId}`;
-                
-                if (course.lecture && course.lecture.times) {
-                    course.lecture.times.forEach(timeInfo => {
-                        timeInfo.days.split('').forEach(day => {
-                            if (['M', 'T', 'W', 'R', 'F'].includes(day)) {
-                                const block = createCourseBlock(
-                                    `${courseLabel} (LEC)`,
-                                    timeInfo.startTime,
-                                    timeInfo.endTime,
-                                    day,
-                                    color
-                                );
-                                if (block) {
-                                    document.getElementById(`day-${day}`).appendChild(block);
-                                }
-                            }
-                        });
-                    });
-                }
-                
-                if (course.section && course.section.times) {
-                    course.section.times.forEach(timeInfo => {
-                        timeInfo.days.split('').forEach(day => {
-                            if (['M', 'T', 'W', 'R', 'F'].includes(day)) {
-                                const block = createCourseBlock(
-                                    `${courseLabel} (SEC)`,
-                                    timeInfo.startTime,
-                                    timeInfo.endTime,
-                                    day,
-                                    color
-                                );
-                                if (block) {
-                                    document.getElementById(`day-${day}`).appendChild(block);
-                                }
-                            }
-                        });
-                    });
-                }
-            });
+            // Use preview courses if previewing, otherwise use master schedule
+            const coursesToDisplay = previewSelectedCourses !== null ? previewSelectedCourses : masterSelectedCourses;
+            updateCalendarWithCourses(coursesToDisplay, previewSelectedCourses !== null);
         }
 
-        function createCourseBlock(label, startTime, endTime, day, color) {
+        function createCourseBlock(label, startTime, endTime, day, color, type, isPreview = false) {
             function timeToMinutes(timeStr) {
                 const [hours, minutes] = timeStr.split(':').map(Number);
                 return hours * 60 + minutes;
@@ -952,30 +1993,544 @@
             const endMinutes = timeToMinutes(endTime);
             const duration = endMinutes - startMinutes;
             const minutesSince8AM = startMinutes - 480;
-            const startOffset = 40 + minutesSince8AM;
+            
+            // Each 30-minute slot is 30px tall, so 1 minute = 1px
+            // Course blocks are positioned in day-content which starts right after header
+            const startOffset = minutesSince8AM;
             const height = duration;
             
-            if (minutesSince8AM < 0 || minutesSince8AM > 720 || minutesSince8AM + duration > 720) {
+            // 8 AM to 10 PM = 840 minutes = 840px
+            if (minutesSince8AM < 0 || minutesSince8AM > 840 || minutesSince8AM + duration > 840) {
                 return null;
             }
             
+            // Calculate minimum height needed for all content (padding + text + spacing)
+            const minHeightNeeded = 55; // Enough for padding + type + course + time + margins
+            const actualHeight = Math.max(height, minHeightNeeded);
+            
+            // Scale down text for very short blocks
+            const isShortBlock = height < 60;
+            const scaleFactor = isShortBlock ? Math.max(0.8, height / 75) : 1;
+            const padding = isShortBlock ? '0.3rem 0.4rem' : '0.5rem 0.5rem';
+            
             const block = document.createElement('div');
             block.className = 'course-block';
-            block.textContent = label;
+            if (isPreview) {
+                block.classList.add('preview-block');
+            }
             block.style.top = `${startOffset}px`;
-            block.style.height = `${Math.max(height, 20)}px`;
+            block.style.height = `${actualHeight}px`;
             block.style.background = color;
-            block.title = `${label}\n${startTime} - ${endTime}`;
+            block.style.padding = padding;
+            
+            // Format time display
+            const timeDisplay = `${formatTime12Hour(startTime)} - ${formatTime12Hour(endTime)}`;
+            
+            // Create type label (Lecture/Section)
+            const typeDiv = document.createElement('div');
+            typeDiv.textContent = type || 'Lecture';
+            typeDiv.style.fontSize = `${0.65 * scaleFactor}rem`;
+            typeDiv.style.opacity = '1';
+            typeDiv.style.lineHeight = isShortBlock ? '1.2' : '1.3';
+            typeDiv.style.textAlign = 'center';
+            typeDiv.style.width = '100%';
+            typeDiv.style.fontWeight = '600';
+            typeDiv.style.textTransform = 'uppercase';
+            typeDiv.style.letterSpacing = '0.5px';
+            if (isShortBlock) {
+                typeDiv.style.marginTop = '1px';
+            }
+            
+            // Create course label
+            const labelDiv = document.createElement('div');
+            labelDiv.textContent = label;
+            labelDiv.style.fontWeight = '700';
+            labelDiv.style.fontSize = `${0.8 * scaleFactor}rem`;
+            labelDiv.style.lineHeight = isShortBlock ? '1.2' : '1.3';
+            labelDiv.style.textAlign = 'center';
+            labelDiv.style.width = '100%';
+            labelDiv.style.marginTop = isShortBlock ? '1px' : '3px';
+            labelDiv.style.letterSpacing = '0.2px';
+            
+            // Create time display
+            const timeDiv = document.createElement('div');
+            timeDiv.textContent = timeDisplay;
+            timeDiv.style.fontSize = `${0.7 * scaleFactor}rem`;
+            timeDiv.style.opacity = '1';
+            timeDiv.style.lineHeight = isShortBlock ? '1.2' : '1.3';
+            timeDiv.style.marginTop = isShortBlock ? '1px' : '2px';
+            timeDiv.style.textAlign = 'center';
+            timeDiv.style.width = '100%';
+            timeDiv.style.fontWeight = '500';
+            
+            block.appendChild(typeDiv);
+            block.appendChild(labelDiv);
+            block.appendChild(timeDiv);
+            
+            block.title = `${type || 'Lecture'}: ${label}\n${timeDisplay}`;
             
             return block;
         }
 
+        // Schedule Optimization Functions
+        let optimizedSchedules = [];
+        let previewScheduleIndex = null; // Index of schedule being previewed
+        let appliedScheduleIndex = null; // Index of actually applied schedule
+        let optimizeTimeout = null;
+        let masterSelectedCourses = []; // Master schedule (what's actually saved)
+        let previewSelectedCourses = null; // Temporary preview courses
+
+        function updateOptimizerStatus(message, type = '') {
+            const statusEl = document.getElementById('optimizerStatus');
+            if (statusEl) {
+                statusEl.textContent = message;
+                statusEl.className = `optimizer-status ${type}`;
+            }
+        }
+
+        async function optimizeSchedule() {
+            // Use master schedule for optimization
+            const coursesToOptimize = masterSelectedCourses.length > 0 ? masterSelectedCourses : selectedCourses;
+            
+            if (coursesToOptimize.length === 0) {
+                const optimizedSchedulesDiv = document.getElementById('optimizedSchedules');
+                if (optimizedSchedulesDiv) {
+                    optimizedSchedulesDiv.style.display = 'none';
+                }
+                updateOptimizerStatus('', '');
+                // Clear preview and applied schedule if no courses
+                previewScheduleIndex = null;
+                previewSelectedCourses = null;
+                appliedScheduleIndex = null;
+                const previewIndicator = document.getElementById('previewIndicator');
+                if (previewIndicator) {
+                    previewIndicator.style.display = 'none';
+                }
+                updateCalendar();
+                return;
+            }
+
+            const scheduleOptions = document.getElementById('scheduleOptions');
+            const optimizedSchedulesDiv = document.getElementById('optimizedSchedules');
+
+            // Remember if a preview was active before optimization
+            const wasPreviewing = previewScheduleIndex !== null;
+            
+            // Clear applied schedule index when re-optimizing (settings changed)
+            // The applied schedule is based on old settings, so it's no longer valid
+            if (appliedScheduleIndex !== null) {
+                appliedScheduleIndex = null;
+            }
+
+            updateOptimizerStatus('Calculating optimal schedules...', 'loading');
+            scheduleOptions.innerHTML = '<div class="loading-optimization">Finding optimal schedules...</div>';
+            optimizedSchedulesDiv.style.display = 'block';
+
+            // Collect preferences
+            const spreadPreference = document.querySelector('input[name="spreadPreference"]:checked').value;
+            const preferredStartTimeSelect = document.getElementById('preferredStartTime');
+            const preferredEndTimeSelect = document.getElementById('preferredEndTime');
+            const preferredStartTime = preferredStartTimeSelect.value || null;
+            const preferredEndTime = preferredEndTimeSelect.value || null;
+            const prioritizeFreeDays = document.getElementById('prioritizeFreeDays').checked;
+            const minimizeGaps = document.getElementById('minimizeGaps').checked;
+            const maxClassesPerDay = document.getElementById('maxClassesPerDay').value || null;
+            const preferredTimeOfDay = document.querySelector('input[name="preferredTimeOfDay"]:checked')?.value || null;
+
+            const preferences = {
+                spreadPreference: spreadPreference,
+                preferredStartTime: preferredStartTime,
+                preferredEndTime: preferredEndTime,
+                prioritizeFreeDays: prioritizeFreeDays,
+                minimizeGaps: minimizeGaps,
+                maxClassesPerDay: maxClassesPerDay ? parseInt(maxClassesPerDay) : null,
+                preferredTimeOfDay: preferredTimeOfDay
+            };
+
+            // Get course IDs from master schedule
+            const courseIds = coursesToOptimize.map(c => c.courseId);
+
+            try {
+                const response = await fetch('/api/optimize-schedule', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        courseIds: courseIds,
+                        preferences: preferences,
+                        maxResults: 10
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    optimizedSchedules = data.schedules;
+                    
+                    // Display schedules without automatically applying
+                    if (data.schedules.length > 0) {
+                        displayOptimizedSchedules(data.schedules);
+                        
+                        // If a preview was active before optimization, automatically preview the first (best) option
+                        if (wasPreviewing) {
+                            previewScheduleOption(0);
+                        }
+                    } else {
+                        // Clear selection if no schedules found
+                        previewScheduleIndex = null;
+                        previewSelectedCourses = null;
+                        appliedScheduleIndex = null;
+                        const previewIndicator = document.getElementById('previewIndicator');
+                        if (previewIndicator) {
+                            previewIndicator.style.display = 'none';
+                        }
+                        updateCalendar();
+                        displayOptimizedSchedules([]);
+                    }
+                } else {
+                    scheduleOptions.innerHTML = `<div class="empty-state">Error: ${data.error || 'Failed to optimize schedules'}</div>`;
+                    updateOptimizerStatus('Error optimizing schedules', 'error');
+                    // Clear preview on error
+                    if (wasPreviewing) {
+                        previewScheduleIndex = null;
+                        previewSelectedCourses = null;
+                        const previewIndicator = document.getElementById('previewIndicator');
+                        if (previewIndicator) {
+                            previewIndicator.style.display = 'none';
+                        }
+                        updateCalendar();
+                    }
+                }
+            } catch (error) {
+                console.error('Optimization error:', error);
+                scheduleOptions.innerHTML = '<div class="empty-state">Error optimizing schedules. Please try again.</div>';
+                updateOptimizerStatus('Error optimizing schedules', 'error');
+                // Clear preview on error
+                if (wasPreviewing) {
+                    previewScheduleIndex = null;
+                    previewSelectedCourses = null;
+                    const previewIndicator = document.getElementById('previewIndicator');
+                    if (previewIndicator) {
+                        previewIndicator.style.display = 'none';
+                    }
+                    updateCalendar();
+                }
+            }
+        }
+
+        function autoOptimize() {
+            // Clear applied schedule when settings change (since it's based on old settings)
+            // The masterSelectedCourses already contains the current schedule, so we just need to clear the applied index
+            if (appliedScheduleIndex !== null) {
+                appliedScheduleIndex = null;
+                // Update display immediately to remove "Applied" badge
+                if (optimizedSchedules.length > 0) {
+                    displayOptimizedSchedules(optimizedSchedules);
+                }
+            }
+            
+            // Debounce optimization to avoid too many API calls
+            clearTimeout(optimizeTimeout);
+            optimizeTimeout = setTimeout(() => {
+                optimizeSchedule();
+            }, 500); // Wait 500ms after last change
+        }
+
+        function displayOptimizedSchedules(schedules) {
+            const scheduleOptions = document.getElementById('scheduleOptions');
+            
+            // Clear selection if selected index is out of bounds
+            if (previewScheduleIndex !== null && previewScheduleIndex >= schedules.length) {
+                previewScheduleIndex = null;
+                previewSelectedCourses = null;
+            }
+            if (appliedScheduleIndex !== null && appliedScheduleIndex >= schedules.length) {
+                appliedScheduleIndex = null;
+            }
+
+            if (schedules.length === 0) {
+                scheduleOptions.innerHTML = '<div class="empty-state">No valid schedule combinations found. Try adjusting your preferences or selecting different courses.</div>';
+                updateOptimizerStatus('No valid schedules found', 'error');
+                return;
+            }
+
+            scheduleOptions.innerHTML = schedules.map((schedule, index) => {
+                const coursesList = schedule.courses.map(course => {
+                    let timesStr = '';
+                    if (course.lecture && course.lecture.times && course.lecture.times.length > 0) {
+                        const lecTimes = course.lecture.times.map(t => 
+                            `${t.days} ${formatTime12Hour(t.startTime)}-${formatTime12Hour(t.endTime)}`
+                        ).join(', ');
+                        timesStr = `Lec: ${lecTimes}`;
+                    }
+                    if (course.section && course.section.times && course.section.times.length > 0) {
+                        const secTimes = course.section.times.map(t => 
+                            `${t.days} ${formatTime12Hour(t.startTime)}-${formatTime12Hour(t.endTime)}`
+                        ).join(', ');
+                        timesStr += timesStr ? ` | Sec: ${secTimes}` : `Sec: ${secTimes}`;
+                    }
+                    return `<div class="schedule-course-item"><strong>${course.courseId}</strong>: ${timesStr || 'TBA'}</div>`;
+                }).join('');
+
+                const isPreviewing = index === previewScheduleIndex;
+                const isApplied = index === appliedScheduleIndex;
+
+                return `
+                    <div class="schedule-option ${isPreviewing ? 'selected' : ''} ${isApplied ? 'applied' : ''}" onclick="previewScheduleOption(${index})">
+                        <div class="schedule-header">
+                            <strong>Option ${index + 1}${isApplied ? ' <span class="applied-badge">Applied</span>' : isPreviewing ? ' <span style="font-size: 0.75rem; color: #3b82f6; font-weight: normal; margin-left: 0.5rem;">(Previewing)</span>' : ''}</strong>
+                            <span class="schedule-score">Score: ${Math.round(schedule.score)}</span>
+                        </div>
+                        <div class="schedule-courses-list">
+                            ${coursesList}
+                        </div>
+                        ${isPreviewing ? `
+                        <div class="schedule-actions" onclick="event.stopPropagation();">
+                            <button class="apply-schedule-btn" onclick="applySelectedSchedule();">Apply Schedule</button>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+            
+            // Update status after displaying schedules
+            updateOptimizerStatus('', '');
+        }
+
+        function previewScheduleOption(index) {
+            const schedule = optimizedSchedules[index];
+            if (!schedule) {
+                return;
+            }
+
+            // Ensure master schedule is initialized
+            if (masterSelectedCourses.length === 0) {
+                masterSelectedCourses = JSON.parse(JSON.stringify(selectedCourses));
+            }
+
+            // Build preview courses from schedule
+            const courseMap = {};
+            schedule.courses.forEach(optCourse => {
+                courseMap[optCourse.courseId] = optCourse;
+            });
+
+            // Create preview courses - match courses from master schedule
+            previewSelectedCourses = masterSelectedCourses.map(course => {
+                const optCourse = courseMap[course.courseId];
+                if (optCourse) {
+                    return {
+                        courseId: course.courseId,
+                        title: course.title || optCourse.title,
+                        lecture: optCourse.lecture,
+                        section: optCourse.section || null
+                    };
+                }
+                return course;
+            }).filter(course => {
+                // Only include courses that are in the optimized schedule
+                return courseMap[course.courseId] !== undefined;
+            });
+
+            // Update preview index
+            previewScheduleIndex = index;
+
+            // Show preview indicator
+            const previewIndicator = document.getElementById('previewIndicator');
+            if (previewIndicator) {
+                previewIndicator.style.display = 'block';
+            }
+
+            // Show preview on calendar
+            updateCalendarWithCourses(previewSelectedCourses, true);
+            displayOptimizedSchedules(optimizedSchedules);
+        }
+
+        function cancelPreview() {
+            previewScheduleIndex = null;
+            previewSelectedCourses = null;
+            
+            // Hide preview indicator
+            const previewIndicator = document.getElementById('previewIndicator');
+            if (previewIndicator) {
+                previewIndicator.style.display = 'none';
+            }
+            
+            // Restore master schedule
+            updateCalendarWithCourses(masterSelectedCourses, false);
+            displayOptimizedSchedules(optimizedSchedules);
+        }
+
+        function applySelectedSchedule() {
+            if (previewScheduleIndex === null) {
+                return;
+            }
+
+            const schedule = optimizedSchedules[previewScheduleIndex];
+            if (!schedule) {
+                return;
+            }
+
+            // Apply preview to master schedule
+            masterSelectedCourses = JSON.parse(JSON.stringify(previewSelectedCourses));
+            selectedCourses = JSON.parse(JSON.stringify(previewSelectedCourses));
+            appliedScheduleIndex = previewScheduleIndex;
+            previewScheduleIndex = null;
+            previewSelectedCourses = null;
+
+            // Hide preview indicator
+            const previewIndicator = document.getElementById('previewIndicator');
+            if (previewIndicator) {
+                previewIndicator.style.display = 'none';
+            }
+
+            // Update UI
+            updateSelectedCoursesList();
+            updateCalendarWithCourses(selectedCourses, false);
+            saveSelectedCoursesToCookie();
+            displayOptimizedSchedules(optimizedSchedules);
+
+            // Visual feedback
+            const scheduleOption = document.querySelectorAll('.schedule-option')[appliedScheduleIndex];
+            if (scheduleOption) {
+                scheduleOption.classList.add('applying');
+                setTimeout(() => scheduleOption.classList.remove('applying'), 600);
+            }
+
+            const calendarContainer = document.querySelector('.calendar-container');
+            if (calendarContainer) {
+                calendarContainer.classList.add('updating');
+                setTimeout(() => calendarContainer.classList.remove('updating'), 600);
+            }
+        }
+
+        function updateCalendarWithCourses(courses, isPreview) {
+            // Remove existing blocks with a quick fade-out
+            const existingBlocks = document.querySelectorAll('.course-block');
+            const fadeOutDuration = 80; // Faster fade-out for smoother transitions
+            
+            if (existingBlocks.length > 0) {
+                existingBlocks.forEach(block => {
+                    block.style.transition = `opacity ${fadeOutDuration}ms ease-out`;
+                    block.style.opacity = '0';
+                });
+            }
+
+            // Remove blocks from DOM and add new ones in the same frame for seamless transition
+            setTimeout(() => {
+                // Remove blocks from DOM
+                existingBlocks.forEach(block => {
+                    if (block.parentNode) {
+                        block.parentNode.removeChild(block);
+                    }
+                });
+
+                // Add new blocks immediately
+                const colors = [
+                    '#0066cc', '#008855', '#cc6600', '#9900cc', '#cc0066',
+                    '#0099cc', '#66cc00', '#cc9900', '#cc0099', '#0099ff'
+                ];
+
+                courses.forEach((course, courseIndex) => {
+                    const color = colors[courseIndex % colors.length];
+                    const courseLabel = course.courseId;
+
+                    if (course.lecture && course.lecture.times) {
+                        course.lecture.times.forEach(timeInfo => {
+                            timeInfo.days.split('').forEach(day => {
+                                if (['M', 'T', 'W', 'R', 'F'].includes(day)) {
+                                    const block = createCourseBlock(
+                                        courseLabel,
+                                        timeInfo.startTime,
+                                        timeInfo.endTime,
+                                        day,
+                                        color,
+                                        'Lecture',
+                                        isPreview
+                                    );
+                                    if (block) {
+                                        // Disable slide-in animation for smoother updates
+                                        block.style.animation = 'none';
+                                        // Start with opacity 0 and fade in quickly
+                                        block.style.opacity = '0';
+                                        block.style.transition = 'opacity 0.12s ease-in';
+                                        document.getElementById(`day-${day}`).appendChild(block);
+                                        // Trigger fade-in immediately
+                                        requestAnimationFrame(() => {
+                                            block.style.opacity = isPreview ? '0.7' : '1';
+                                        });
+                                    }
+                                }
+                            });
+                        });
+                    }
+
+                    if (course.section && course.section.times) {
+                        course.section.times.forEach(timeInfo => {
+                            timeInfo.days.split('').forEach(day => {
+                                if (['M', 'T', 'W', 'R', 'F'].includes(day)) {
+                                    const block = createCourseBlock(
+                                        courseLabel,
+                                        timeInfo.startTime,
+                                        timeInfo.endTime,
+                                        day,
+                                        color,
+                                        'Section',
+                                        isPreview
+                                    );
+                                    if (block) {
+                                        // Disable slide-in animation for smoother updates
+                                        block.style.animation = 'none';
+                                        // Start with opacity 0 and fade in quickly
+                                        block.style.opacity = '0';
+                                        block.style.transition = 'opacity 0.12s ease-in';
+                                        document.getElementById(`day-${day}`).appendChild(block);
+                                        // Trigger fade-in immediately
+                                        requestAnimationFrame(() => {
+                                            block.style.opacity = isPreview ? '0.7' : '1';
+                                        });
+                                    }
+                                }
+                            });
+                        });
+                    }
+                });
+            }, fadeOutDuration);
+        }
+
+        function clearAppliedSchedule() {
+            appliedScheduleIndex = null;
+            previewScheduleIndex = null;
+            previewSelectedCourses = null;
+            
+            // Hide preview indicator
+            const previewIndicator = document.getElementById('previewIndicator');
+            if (previewIndicator) {
+                previewIndicator.style.display = 'none';
+            }
+            
+            // Restore master schedule
+            selectedCourses = JSON.parse(JSON.stringify(masterSelectedCourses));
+            
+            // Update UI
+            updateSelectedCoursesList();
+            updateCalendar();
+            saveSelectedCoursesToCookie();
+            displayOptimizedSchedules(optimizedSchedules);
+        }
+
+
         window.openCourse = openCourse;
         window.selectLecture = selectLecture;
+        window.toggleLecture = toggleLecture;
         window.selectSection = selectSection;
         window.addCourse = addCourse;
         window.closeModal = closeModal;
         window.removeCourse = removeCourse;
+        window.optimizeSchedule = optimizeSchedule;
+        window.previewScheduleOption = previewScheduleOption;
+        window.applySelectedSchedule = applySelectedSchedule;
+        window.cancelPreview = cancelPreview;
+        window.clearAppliedSchedule = clearAppliedSchedule;
+        window.toggleSection = toggleSection;
 
         init();
     </script>
