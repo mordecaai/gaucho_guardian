@@ -133,9 +133,26 @@ for filename in potential_files:
         works, sections, reasons = check_class(data, current_blackout)
         
         if works:
-            # Join the list of valid sections into a string for the print statement
+            # Join the list of valid sections into a string for the header print
             section_str = ", ".join(sections)
             print(f"✅ {course_id} WORKS! (Valid sections: {section_str})")
+            
+            # --- NEW: TIME BREAKDOWN SECTION ---
+            # We loop through all sections in the original JSON
+            # If the section is one of our "valid" ones, we print its specific times
+            for section in data.get("classSections", []):
+                code = section.get("enrollCode")
+                if code in sections:
+                    times = []
+                    for loc in (section.get("timeLocations") or []):
+                        d = loc.get("days", "").strip()
+                        s = loc.get("beginTime", "")
+                        e = loc.get("endTime", "")
+                        times.append(f"{d} {s}-{e}")
+                    
+                    # Print the indented time summary for this specific section
+                    print(f"   👉 Section {code}: {' | '.join(times)}")
+            # ------------------------------------
             
             # Create a combined object for the ranking team
             # This attaches the specific "passing codes" to the full course data
@@ -145,9 +162,11 @@ for filename in potential_files:
             true_array.append(course_id)
             true_data_array.append(data_with_results)
         else:
-            print(f"❌ {course_id} REJECTED ({', '.join(reasons)})")
+            # Join the rejection reasons (e.g., "3 Full, 1 Conflict")
+            reason_str = ", ".join(reasons) if reasons else "Filter Mismatch"
+            print(f"❌ {course_id} REJECTED ({reason_str})")
             false_array.append(course_id)
-            false_data_array.append(data) # We store the ENTIRE dictionary here
+            false_data_array.append(data) # Store the entire dictionary here
 
 # --- 5. FINAL OUTPUT & EXPORT ---
 print("\n" + "="*50)
