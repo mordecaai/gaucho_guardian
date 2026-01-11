@@ -14,12 +14,7 @@ df_filtered = df[df['year'] >= 2021]
 print(df_filtered.head())
 print(f"\nTotal records from 2020+: {len(df_filtered)}")
 
-# Analyze A distributions by instructor
-instructor_stats = df_filtered.groupby('instructor').agg({
-    'A': ['mean', 'sum'],  # Average A rate and total A's
-    'course': 'count'  # Number of classes taught
-}).round(3)
+#add the sorted data into a new csv file
+df_filtered.to_csv('grades_filtered.csv', index=False)
 
-instructor_stats.columns = ['avg_A_rate', 'total_As', 'num_classes']
-print("\nTop instructors by A rate:")
-print(instructor_stats.sort_values('avg_A_rate', ascending=False).head(10))
+print(f"Filtered {len(df_filtered)} records and saved to grades_filtered.csv")
