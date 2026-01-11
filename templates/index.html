@@ -16,7 +16,7 @@
             line-height: 1.5;
             color: #000;
             background-color: #fff;
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -58,6 +58,132 @@
             font-size: 0.875rem;
             color: #666;
         }
+
+        form {
+            margin-top: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        input[type="text"],
+        select {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #000;
+            font-family: inherit;
+            font-size: 0.875rem;
+            background-color: #fff;
+        }
+
+        input[type="checkbox"] {
+            margin-right: 6px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+        }
+
+        .blackout-schedule {
+            margin-top: 8px;
+        }
+
+        .day-block {
+            margin-bottom: 16px;
+        }
+
+        .day-label {
+            display: block;
+            width: 100%;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .time-inputs {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .time-range {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+            gap: 6px;
+        }
+
+        input[type="time"] {
+            padding: 4px 6px;
+            border: 1px solid #000;
+            font-family: inherit;
+            font-size: 0.875rem;
+            width: 130px;
+        }
+
+        .time-range input[type="time"] {
+            width: 130px;
+        }
+
+        .remove-time {
+            padding: 4px 6px;
+            border: 1px solid #000;
+            background: #fff;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+
+        .add-time {
+            padding: 4px 8px;
+            border: 1px solid #000;
+            background: #fff;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+
+        button[type="submit"] {
+            margin-top: 24px;
+            padding: 8px 16px;
+            border: 1px solid #000;
+            background: #fff;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        button[type="submit"]:hover {
+            background: #000;
+            color: #fff;
+        }
+
+        .schedule-controls {
+            margin-top: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .schedule-controls button {
+            padding: 4px 8px;
+            border: 1px solid #000;
+            background: #fff;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.75rem;
+        }
+
+        .schedule-controls button:hover {
+            background: #000;
+            color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -66,8 +192,212 @@
 
     <hr>
 
-    <h2>Welcome</h2>
-    <p>Gaucho Guardian helps UCSB students reduce the strain of selecting classes by filtering and scoring courses based on your preferences.</p>
+    <h2>Search Courses</h2>
+    
+    <form id="courseSearchForm" method="POST" action="/search">
+        <div class="form-group">
+            <label for="subjectArea">Subject Area</label>
+            <input type="text" id="subjectArea" name="subjectArea" placeholder="e.g., PHYS, MATH, ECE, CMPSC">
+        </div>
+
+        <div class="form-group">
+            <label for="college">College</label>
+            <select id="college" name="college">
+                <option value="">Any</option>
+                <option value="Engineering">Engineering</option>
+                <option value="Letters and Science">Letters and Science</option>
+                <option value="Creative Studies">Creative Studies</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>GE Areas (Optional - select multiple)</label>
+            <div style="margin-top: 8px;">
+                <div style="margin-bottom: 12px;">
+                    <div style="font-weight: 600; font-size: 0.8125rem; margin-bottom: 6px;">General Areas:</div>
+                    <div style="display: flex; flex-direction: column; gap: 4px; margin-left: 8px;">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="ge-A" name="geArea" value="A">
+                            <label for="ge-A" style="margin-bottom: 0; font-weight: 400;">Area A: English Reading and Composition</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="ge-B" name="geArea" value="B">
+                            <label for="ge-B" style="margin-bottom: 0; font-weight: 400;">Area B: Foreign Language</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="ge-C" name="geArea" value="C">
+                            <label for="ge-C" style="margin-bottom: 0; font-weight: 400;">Area C: Science, Mathematics, and Technology</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="ge-D" name="geArea" value="D">
+                            <label for="ge-D" style="margin-bottom: 0; font-weight: 400;">Area D: Social Sciences</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="ge-E" name="geArea" value="E">
+                            <label for="ge-E" style="margin-bottom: 0; font-weight: 400;">Area E: Civilization and Thought</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="ge-F" name="geArea" value="F">
+                            <label for="ge-F" style="margin-bottom: 0; font-weight: 400;">Area F: The Arts</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="ge-G" name="geArea" value="G">
+                            <label for="ge-G" style="margin-bottom: 0; font-weight: 400;">Area G: Literature</label>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div style="font-weight: 600; font-size: 0.8125rem; margin-bottom: 6px;">Special Areas:</div>
+                    <div style="display: flex; flex-direction: column; gap: 4px; margin-left: 8px;">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="ge-hash" name="geArea" value="#">
+                            <label for="ge-hash" style="margin-bottom: 0; font-weight: 400;">Quantitative Relationships [#]</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="ge-plus" name="geArea" value="+">
+                            <label for="ge-plus" style="margin-bottom: 0; font-weight: 400;">World Cultures [+]</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="ge-amp" name="geArea" value="&">
+                            <label for="ge-amp" style="margin-bottom: 0; font-weight: 400;">Ethnicity [&]</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="ge-caret" name="geArea" value="^">
+                            <label for="ge-caret" style="margin-bottom: 0; font-weight: 400;">European Traditions [^]</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="ge-star" name="geArea" value="*">
+                            <label for="ge-star" style="margin-bottom: 0; font-weight: 400;">Writing [*]</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Blackout Schedule (time conflicts to avoid)</label>
+            <div class="schedule-controls">
+                <button type="button" onclick="saveSchedule()">Save Schedule</button>
+                <button type="button" onclick="loadSchedule()">Load Schedule</button>
+                <button type="button" onclick="clearSchedule()">Clear</button>
+            </div>
+            <div class="blackout-schedule">
+                <div class="day-block" data-day="M">
+                    <span class="day-label">Monday</span>
+                    <div class="time-inputs" id="time-M"></div>
+                    <button type="button" class="add-time" onclick="addTimeBlock('M')">Add time</button>
+                </div>
+                <div class="day-block" data-day="T">
+                    <span class="day-label">Tuesday</span>
+                    <div class="time-inputs" id="time-T"></div>
+                    <button type="button" class="add-time" onclick="addTimeBlock('T')">Add time</button>
+                </div>
+                <div class="day-block" data-day="W">
+                    <span class="day-label">Wednesday</span>
+                    <div class="time-inputs" id="time-W"></div>
+                    <button type="button" class="add-time" onclick="addTimeBlock('W')">Add time</button>
+                </div>
+                <div class="day-block" data-day="R">
+                    <span class="day-label">Thursday</span>
+                    <div class="time-inputs" id="time-R"></div>
+                    <button type="button" class="add-time" onclick="addTimeBlock('R')">Add time</button>
+                </div>
+                <div class="day-block" data-day="F">
+                    <span class="day-label">Friday</span>
+                    <div class="time-inputs" id="time-F"></div>
+                    <button type="button" class="add-time" onclick="addTimeBlock('F')">Add time</button>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit">Search</button>
+    </form>
+
+    <script>
+        const DAYS = ['M', 'T', 'W', 'R', 'F'];
+
+        function addTimeBlock(day, startTime = '', endTime = '') {
+            const container = document.getElementById(`time-${day}`);
+            const timeRange = document.createElement('div');
+            timeRange.className = 'time-range';
+            timeRange.innerHTML = `
+                <input type="time" name="blackout[${day}][start][]" value="${startTime}" required>
+                <span>-</span>
+                <input type="time" name="blackout[${day}][end][]" value="${endTime}" required>
+                <button type="button" class="remove-time" onclick="this.parentElement.remove()">Remove</button>
+            `;
+            container.appendChild(timeRange);
+        }
+
+        function saveSchedule() {
+            const schedule = {};
+            DAYS.forEach(day => {
+                const container = document.getElementById(`time-${day}`);
+                const timeRanges = container.querySelectorAll('.time-range');
+                schedule[day] = [];
+                timeRanges.forEach(range => {
+                    const start = range.querySelector('input[type="time"]').value;
+                    const end = range.querySelectorAll('input[type="time"]')[1].value;
+                    if (start && end) {
+                        schedule[day].push({ start, end });
+                    }
+                });
+            });
+            localStorage.setItem('gauchoGuardianSchedule', JSON.stringify(schedule));
+            alert('Schedule saved!');
+        }
+
+        function loadSchedule() {
+            const saved = localStorage.getItem('gauchoGuardianSchedule');
+            if (!saved) {
+                alert('No saved schedule found.');
+                return;
+            }
+            
+            const schedule = JSON.parse(saved);
+            
+            // Clear existing time blocks
+            DAYS.forEach(day => {
+                const container = document.getElementById(`time-${day}`);
+                container.innerHTML = '';
+            });
+            
+            // Load saved schedule
+            DAYS.forEach(day => {
+                if (schedule[day] && schedule[day].length > 0) {
+                    schedule[day].forEach(({ start, end }) => {
+                        addTimeBlock(day, start, end);
+                    });
+                }
+            });
+            
+            alert('Schedule loaded!');
+        }
+
+        function clearSchedule() {
+            if (confirm('Clear all time blocks?')) {
+                DAYS.forEach(day => {
+                    const container = document.getElementById(`time-${day}`);
+                    container.innerHTML = '';
+                });
+            }
+        }
+
+        // Auto-load saved schedule on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            const saved = localStorage.getItem('gauchoGuardianSchedule');
+            if (saved) {
+                const schedule = JSON.parse(saved);
+                DAYS.forEach(day => {
+                    if (schedule[day] && schedule[day].length > 0) {
+                        schedule[day].forEach(({ start, end }) => {
+                            addTimeBlock(day, start, end);
+                        });
+                    }
+                });
+            }
+        });
+    </script>
 
     <hr>
 
