@@ -51,6 +51,7 @@ user_preferences = {
 def ge_score(course, prefs):
    course_ges = course.get("generalEducation")
    
+
    if not prefs["ge"]["ge_priority"]:
       return 1.0
    
@@ -88,10 +89,10 @@ def units_score(course, prefs):
     return max(0.0, score)
 
 def grade_dist_score(course, prefs):
-    """
-    Calculate normalized grade distribution score (0-1) for a course.
-    Normalizes by department to account for different grading standards.
-    """
+    
+    #Calculate normalized grade distribution score (0-1) for a course.
+    #Normalizes by department to account for the mean/std dev of each
+    
     course_id = course.get('courseId', '').strip()
     
     if not course_id:
@@ -136,7 +137,7 @@ def grade_dist_score(course, prefs):
     else:
         z_score = (avg_a_rate - dept_mean) / dept_std
     
-    # Convert to 0-1 scale using sigmoid
+    # Convert to normalized score bewteen 0 and 1 (sigmoid function)
     normalized_score = 1 / (1 + np.exp(-z_score))
     
     return normalized_score
