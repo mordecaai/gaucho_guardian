@@ -1,5 +1,6 @@
 import requests
 import json
+import winter_quarter_codes
 from winter_quarter_codes import all_dept_codes as dept_codes
 MY_API_KEY = input("Enter API key: ")
 headers = {
