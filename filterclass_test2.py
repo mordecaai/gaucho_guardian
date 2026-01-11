@@ -120,44 +120,54 @@ for filename in potential_files:
             
             all_sections = data.get("classSections", [])
             lecture_info = {}
-            
-            # Identify if we have a Lecture + Section structure
             has_lecture = len(all_sections) > 1
             
             if has_lecture:
                 lec = all_sections[0]
-                lec_times = []
+                lec_days = []
+                lec_starts = [] # New list for starts
+                lec_ends = []   # New list for ends
+                
                 for loc in lec.get("timeLocations", []):
-                    lec_times.append(f"{loc.get('days','').strip()} {loc.get('beginTime')}-{loc.get('endTime')}")
+                    lec_days.append(loc.get('days','').strip())
+                    lec_starts.append(loc.get('beginTime'))
+                    lec_ends.append(loc.get('endTime'))
                 
                 lecture_info = {
                     "lectureCode": lec.get("enrollCode"),
-                    "lectureTime": " | ".join(lec_times)
+                    "lectureDays": lec_days,
+                    "lectureStartTimes": lec_starts,
+                    "lectureEndTimes": lec_ends
                 }
 
-            # Build the modified data entry
             mod_data = data.copy()
             mod_data["lectureDetails"] = lecture_info 
             
-            # --- FIX: FILTER OUT THE LECTURE FROM SECTION LISTS ---
-            # If there's a lecture, we only care about sections starting from index 1
-            # If there's no lecture, we use index 0
             search_start_index = 1 if has_lecture else 0
             actual_sections_only = all_sections[search_start_index:]
-            
-            # Only include codes in 'passingEnrollCodes' if they are NOT the lecture code
             clean_passing_codes = [c for c in sections if c != lecture_info.get("lectureCode")]
             mod_data["passingEnrollCodes"] = clean_passing_codes
             
-            # Only include times in 'sectionTimesSummary' if they are NOT the lecture
-            readable_times = {} 
+            # --- UPDATED: FULLY SPLIT SECTION SUMMARY ---
+            section_details = {} 
             for s in actual_sections_only:
                 code = s.get("enrollCode")
                 if code in clean_passing_codes:
-                    t_list = [f"{l.get('days','').strip()} {l.get('beginTime')}-{l.get('endTime')}" for l in s.get("timeLocations", [])]
-                    readable_times[code] = " | ".join(t_list)
+                    s_days = []
+                    s_starts = []
+                    s_ends = []
+                    for l in s.get("timeLocations", []):
+                        s_days.append(l.get('days','').strip())
+                        s_starts.append(l.get('beginTime'))
+                        s_ends.append(l.get('endTime'))
+                    
+                    section_details[code] = {
+                        "days": s_days,
+                        "startTimes": s_starts,
+                        "endTimes": s_ends
+                    }
             
-            mod_data["sectionTimesSummary"] = readable_times
+            mod_data["sectionTimesSummary"] = section_details
             
             true_array.append(course_id)
             true_modified_json.append(mod_data)
