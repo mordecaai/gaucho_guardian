@@ -6,6 +6,7 @@ __pycache__/
 # Poetry
 poetry.lock
 .poetry/
+.venv/
 
 # PDM (old)
 .pdm-python
@@ -18,3 +19,8 @@ OLD_bl_testapikeytesting.py
 #Folders for storing JSON files of test classes
 current_classes/*.json
 potential_classes/*.json
+
+#text files for format 
+classjsonformat.py
+
+#
