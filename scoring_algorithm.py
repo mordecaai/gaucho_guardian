@@ -9,6 +9,9 @@
 # write functions to calcualte score for each weight, then sum those all together to get a final score for each course
 
 #filtering returns enroll codes, and then we get here
+
+#considerations: 
+
 import requests
 from datetime import datetime, timedelta
 
@@ -19,7 +22,7 @@ headers = {
     'ucsb-api-key': MY_API_KEY
 }
 date = "20261"
-class_code = "10736"
+class_code = "03558" #Currently: W 2026 CH ST 1B
 url = f"https://api.ucsb.edu/academics/curriculums/v3/classes/{date}/{class_code}?includeClassSections=true"
 
 
@@ -43,6 +46,9 @@ def getData(year, quarter, class_code):
 
 class1 = getData(date, 1, class_code)
 
+for ge in class1["generalEducation"]:
+    print(ge.get("geCode"))
+
 #these preferences will obviously change
 user_preferences = { 
    "ge": {
@@ -51,13 +57,13 @@ user_preferences = {
    },
 
    "time_preference" : { #note: should have already accounted for courses that created a scheduling conflict during the filtering
-      "start" : "09:00",
-      "end" : "11:00" #3pm
+      "start" : "10:30",
+      "end" : "14:30" #2:30pm
    },
 
    "avoid_days": [], #can contain M, T, W, R, F
 
-   "preferred_units" : 4,
+   "preferred_units" : 5,
 
    "weights" : {
       "ge" : 30,
@@ -72,11 +78,11 @@ user_preferences = {
 def ge_score(course, prefs):
    course_ges = course.get("generalEducation")
    
-   if not course_ges:
-      return 0.0
+   if not prefs["ge"]["ge_priority"]: #if being a ge is not a preference, no effect
+      return 1.0
    
-   if not prefs["ge"]["ge_priority"]:
-      return 0.5 #neutral score
+   if not course_ges: #this course fulfills no GEs (empty ge list)
+      return 0.0
    
    for ge in course_ges:
     if prefs["ge"]["ge_area"] == ge.get("geCode"):
@@ -119,10 +125,22 @@ def units_score(course, prefs):
 def score_course(course, prefs):
    weights = prefs["weights"]
 
+   ge_weighted_score = ge_score(course, prefs) * weights["ge"]
+   time_weighted_score = time_score(course, prefs) * weights["time"]
+   day_weighted_score = day_score(course, prefs) * weights["day"]
+   units_weighted_score = units_score(course, prefs) * weights["units"]
+
+   print(f"GE weighted score: {ge_weighted_score}")
+   print(f"Time weighted score: {time_weighted_score}")
+   print(f"Day weighted score: {day_weighted_score}")
+   print(f"Units weighted score: {units_weighted_score}")
+
    total = (
-    ge_score(course, prefs)    * weights["ge"] +
-        time_score(course, prefs)  * weights["time"] +
-        units_score(course, prefs) * weights["units"]
+    ge_weighted_score +
+        time_weighted_score +
+        units_weighted_score +
+        day_weighted_score +
+        weights["other"]
    )
 
    return round(total)
