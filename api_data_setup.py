@@ -1,8 +1,7 @@
 import requests
 import json
-
+from winter_quarter_codes import all_dept_codes as dept_codes
 MY_API_KEY = input("Enter API key: ")
-
 headers = {
     'accept': 'text/plain',
     'ucsb-api-key': MY_API_KEY
@@ -28,11 +27,11 @@ basic_search_parameters = {
   "subjectArea": "ANTH",            # Example: "CMPSC", "ECE", "MATH", etc.
 }
 
-dept_codes = [
-    ["ANTH", ["00018", "00232", "00398", "00406", "00414", "00422", "54049", "00737", "00786", "54247"]],
-    ["ENGL", ["17947", "17954", "51516", "17962", "59667", "17988", "51573", "18051", "18168", "55673"]],
-    ["ENV", ["18978", "19307", "19372"]]
-  ]
+#dept_codes = [
+ #   ["ANTH", ["00018", "00232", "00398", "00406", "00414", "00422", "54049", "00737", "00786", "54247"]],
+  #  ["ENGL", ["17947", "17954", "51516", "17962", "59667", "17988", "51573", "18051", "18168", "55673"]],
+   # ["ENV", ["18978", "19307", "19372"]]
+  #]
 # loop and look for correct subject areas
 
 class_info_list = []
