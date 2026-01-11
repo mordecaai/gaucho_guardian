@@ -10,12 +10,15 @@
 
 #filtering returns enroll codes, and then we get here
 
-#considerations: 
-
 import requests
 from datetime import datetime, timedelta
 
+
 MY_API_KEY = input("Enter your API key: ")
+
+#
+
+
 
 headers = {
     'accept': 'text/plain',
