@@ -12,398 +12,972 @@
         }
 
         body {
-            font-family: system-ui, -apple-system, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
             line-height: 1.5;
-            color: #000;
-            background-color: #fff;
-            max-width: 1000px;
+            color: #1a1a1a;
+            background-color: #ffffff;
+            padding: 2rem;
+            max-width: 1600px;
             margin: 0 auto;
-            padding: 20px;
+        }
+
+        .header {
+            margin-bottom: 2rem;
         }
 
         h1 {
-            font-size: 1.5rem;
+            font-size: 2rem;
             font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        h2 {
-            font-size: 1.125rem;
-            font-weight: 600;
-            margin-top: 24px;
-            margin-bottom: 8px;
-        }
-
-        h2:first-of-type {
-            margin-top: 0;
-        }
-
-        p {
-            margin-bottom: 12px;
-        }
-
-        a {
+            margin-bottom: 0.5rem;
             color: #000;
-            text-decoration: underline;
         }
 
-        hr {
-            border: none;
-            border-top: 1px solid #000;
-            margin: 24px 0;
-        }
-
-        footer {
-            margin-top: 32px;
-            font-size: 0.875rem;
+        .subtitle {
             color: #666;
+            font-size: 0.9rem;
         }
 
-        form {
-            margin-top: 16px;
+        .main-container {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
         }
 
-        .form-group {
-            margin-bottom: 16px;
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
         }
 
-        label {
-            display: block;
-            margin-bottom: 4px;
+        .search-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .section-title {
+            font-size: 1rem;
             font-weight: 600;
-            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
         }
 
         input[type="text"],
         select {
             width: 100%;
-            padding: 6px 8px;
-            border: 1px solid #000;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
             font-family: inherit;
-            font-size: 0.875rem;
-            background-color: #fff;
+            background: #fff;
         }
 
-        input[type="checkbox"] {
-            margin-right: 6px;
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #0066cc;
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
         }
 
-        .checkbox-group {
+        .filter-checkbox {
             display: flex;
             align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
         }
 
-        .blackout-schedule {
-            margin-top: 8px;
+        .filter-checkbox input {
+            width: auto;
         }
 
-        .day-block {
-            margin-bottom: 16px;
+        .search-results {
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            max-height: 400px;
+            overflow-y: auto;
+            background: #fff;
         }
 
-        .day-label {
-            display: block;
+        .course-item {
+            padding: 1rem;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background-color 0.15s;
+        }
+
+        .course-item:hover {
+            background-color: #f8f8f8;
+        }
+
+        .course-item:last-child {
+            border-bottom: none;
+        }
+
+        .course-code {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #0066cc;
+            margin-bottom: 0.25rem;
+        }
+
+        .course-title {
+            font-size: 0.85rem;
+            color: #333;
+            margin-bottom: 0.25rem;
+        }
+
+        .course-meta {
+            font-size: 0.75rem;
+            color: #666;
+        }
+
+        .selected-courses {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .selected-course {
+            padding: 0.75rem;
+            background: #f8f8f8;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .selected-course-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 0.5rem;
+        }
+
+        .remove-btn {
+            background: none;
+            border: none;
+            color: #cc0000;
+            cursor: pointer;
+            font-size: 0.85rem;
+            padding: 0;
+        }
+
+        .remove-btn:hover {
+            text-decoration: underline;
+        }
+
+        .calendar-container {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+
+        .calendar-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .calendar-header h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .calendar-wrapper {
+            display: grid;
+            grid-template-columns: 60px repeat(5, 1fr);
+            gap: 1px;
+            background: #e0e0e0;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .time-column {
+            background: #f8f8f8;
+        }
+
+        .time-slot {
+            background: #fff;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.7rem;
+            color: #666;
+            text-align: right;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .day-column {
+            background: #fff;
+            position: relative;
+            min-height: 840px;
+        }
+
+        .day-header {
+            background: #f8f8f8;
+            padding: 0.75rem;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+            border-bottom: 1px solid #e0e0e0;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .course-block {
+            position: absolute;
+            left: 2px;
+            right: 2px;
+            padding: 0.4rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            color: #fff;
+            font-weight: 500;
+            cursor: pointer;
+            overflow: hidden;
+            z-index: 5;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            line-height: 1.3;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #999;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #fff;
+            border-radius: 8px;
+            padding: 2rem;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            width: 90%;
+            position: relative;
+        }
+
+        .modal-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .section-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .section-item {
+            padding: 1rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.15s;
+        }
+
+        .section-item:hover {
+            background-color: #f8f8f8;
+        }
+
+        .section-item.selected {
+            background-color: #e8f4f8;
+            border-color: #0066cc;
+        }
+
+        .lecture-time {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .lecture-meta {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .add-btn {
+            margin-top: 1rem;
+            padding: 0.75rem 1.5rem;
+            background: #0066cc;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
             width: 100%;
-            font-weight: 600;
-            margin-bottom: 4px;
         }
 
-        .time-inputs {
-            display: block;
-            margin-bottom: 8px;
+        .add-btn:hover {
+            background: #0052a3;
         }
 
-        .time-range {
-            display: flex;
-            align-items: center;
-            margin-bottom: 6px;
-            gap: 6px;
+        .add-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
         }
 
-        input[type="time"] {
-            padding: 4px 6px;
-            border: 1px solid #000;
-            font-family: inherit;
-            font-size: 0.875rem;
-            width: 130px;
-        }
-
-        .time-range input[type="time"] {
-            width: 130px;
-        }
-
-        .remove-time {
-            padding: 4px 6px;
-            border: 1px solid #000;
-            background: #fff;
-            cursor: pointer;
+        .conflict-badge {
             font-size: 0.75rem;
+            margin-left: 0.5rem;
+            font-weight: 500;
         }
 
-        .add-time {
-            padding: 4px 8px;
-            border: 1px solid #000;
-            background: #fff;
-            cursor: pointer;
-            font-size: 0.75rem;
+        .conflict-free {
+            color: #008855;
         }
 
-        button[type="submit"] {
-            margin-top: 24px;
-            padding: 8px 16px;
-            border: 1px solid #000;
-            background: #fff;
-            cursor: pointer;
-            font-family: inherit;
-            font-size: 0.875rem;
-            font-weight: 600;
+        .conflict-warning {
+            color: #cc0000;
         }
 
-        button[type="submit"]:hover {
-            background: #000;
-            color: #fff;
+        @media (max-width: 1024px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
         }
 
-        .schedule-controls {
-            margin-top: 8px;
-            margin-bottom: 12px;
-            display: flex;
-            gap: 8px;
+        .day-abbr {
+            display: none;
         }
 
-        .schedule-controls button {
-            padding: 4px 8px;
-            border: 1px solid #000;
-            background: #fff;
-            cursor: pointer;
-            font-family: inherit;
-            font-size: 0.75rem;
-        }
-
-        .schedule-controls button:hover {
-            background: #000;
-            color: #fff;
+        @media (max-width: 768px) {
+            .day-label {
+                display: none;
+            }
+            .day-abbr {
+                display: block;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>Gaucho Guardian</h1>
-    <p>UCSB Course Selection Tool</p>
+    <div class="header">
+        <h1>Gaucho Guardian</h1>
+        <p class="subtitle">Course Schedule Planner</p>
+    </div>
 
-    <hr>
-
-    <h2>Search Courses</h2>
-    
-    <form id="courseSearchForm" method="POST" action="/search">
-        <div class="form-group">
-            <label for="subjectArea">Subject Area</label>
-            <input type="text" id="subjectArea" name="subjectArea" placeholder="e.g., PHYS, MATH, ECE, CMPSC">
-        </div>
-
-        <div class="form-group">
-            <label for="college">College</label>
-            <select id="college" name="college">
-                <option value="">Any</option>
-                <option value="Engineering">Engineering</option>
-                <option value="Letters and Science">Letters and Science</option>
-                <option value="Creative Studies">Creative Studies</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label>GE Areas (Optional - select multiple)</label>
-            <div style="margin-top: 8px;">
-                <div style="margin-bottom: 12px;">
-                    <div style="font-weight: 600; font-size: 0.8125rem; margin-bottom: 6px;">General Areas:</div>
-                    <div style="display: flex; flex-direction: column; gap: 4px; margin-left: 8px;">
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="ge-A" name="geArea" value="A">
-                            <label for="ge-A" style="margin-bottom: 0; font-weight: 400;">Area A: English Reading and Composition</label>
-                        </div>
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="ge-B" name="geArea" value="B">
-                            <label for="ge-B" style="margin-bottom: 0; font-weight: 400;">Area B: Foreign Language</label>
-                        </div>
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="ge-C" name="geArea" value="C">
-                            <label for="ge-C" style="margin-bottom: 0; font-weight: 400;">Area C: Science, Mathematics, and Technology</label>
-                        </div>
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="ge-D" name="geArea" value="D">
-                            <label for="ge-D" style="margin-bottom: 0; font-weight: 400;">Area D: Social Sciences</label>
-                        </div>
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="ge-E" name="geArea" value="E">
-                            <label for="ge-E" style="margin-bottom: 0; font-weight: 400;">Area E: Civilization and Thought</label>
-                        </div>
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="ge-F" name="geArea" value="F">
-                            <label for="ge-F" style="margin-bottom: 0; font-weight: 400;">Area F: The Arts</label>
-                        </div>
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="ge-G" name="geArea" value="G">
-                            <label for="ge-G" style="margin-bottom: 0; font-weight: 400;">Area G: Literature</label>
-                        </div>
-                    </div>
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="search-section">
+                <h3 class="section-title">Search Courses</h3>
+                <input type="text" id="searchInput" placeholder="Search by course ID, title, or department...">
+                <select id="departmentSelect">
+                    <option value="">All Departments</option>
+                </select>
+                <div class="filter-checkbox">
+                    <input type="checkbox" id="filterBySchedule">
+                    <label for="filterBySchedule">Show only classes with no time conflicts</label>
                 </div>
-                <div>
-                    <div style="font-weight: 600; font-size: 0.8125rem; margin-bottom: 6px;">Special Areas:</div>
-                    <div style="display: flex; flex-direction: column; gap: 4px; margin-left: 8px;">
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="ge-hash" name="geArea" value="#">
-                            <label for="ge-hash" style="margin-bottom: 0; font-weight: 400;">Quantitative Relationships [#]</label>
-                        </div>
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="ge-plus" name="geArea" value="+">
-                            <label for="ge-plus" style="margin-bottom: 0; font-weight: 400;">World Cultures [+]</label>
-                        </div>
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="ge-amp" name="geArea" value="&">
-                            <label for="ge-amp" style="margin-bottom: 0; font-weight: 400;">Ethnicity [&]</label>
-                        </div>
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="ge-caret" name="geArea" value="^">
-                            <label for="ge-caret" style="margin-bottom: 0; font-weight: 400;">European Traditions [^]</label>
-                        </div>
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="ge-star" name="geArea" value="*">
-                            <label for="ge-star" style="margin-bottom: 0; font-weight: 400;">Writing [*]</label>
-                        </div>
-                    </div>
+                <div id="filterStatus" style="font-size: 0.8rem; color: #666; margin-top: 0.25rem; min-height: 1.2rem;"></div>
+                <div class="search-results" id="searchResults">
+                    <div class="empty-state">Start typing to search for courses</div>
+                </div>
+            </div>
+
+            <div class="selected-courses">
+                <h3 class="section-title">Selected Courses</h3>
+                <div id="selectedCoursesList">
+                    <div class="empty-state" style="padding: 1rem; font-size: 0.85rem;">No courses selected</div>
                 </div>
             </div>
         </div>
 
-        <div class="form-group">
-            <label>Blackout Schedule (time conflicts to avoid)</label>
-            <div class="schedule-controls">
-                <button type="button" onclick="saveSchedule()">Save Schedule</button>
-                <button type="button" onclick="loadSchedule()">Load Schedule</button>
-                <button type="button" onclick="clearSchedule()">Clear</button>
+        <div class="calendar-container">
+            <div class="calendar-header">
+                <h2>Weekly Schedule</h2>
             </div>
-            <div class="blackout-schedule">
-                <div class="day-block" data-day="M">
-                    <span class="day-label">Monday</span>
-                    <div class="time-inputs" id="time-M"></div>
-                    <button type="button" class="add-time" onclick="addTimeBlock('M')">Add time</button>
-                </div>
-                <div class="day-block" data-day="T">
-                    <span class="day-label">Tuesday</span>
-                    <div class="time-inputs" id="time-T"></div>
-                    <button type="button" class="add-time" onclick="addTimeBlock('T')">Add time</button>
-                </div>
-                <div class="day-block" data-day="W">
-                    <span class="day-label">Wednesday</span>
-                    <div class="time-inputs" id="time-W"></div>
-                    <button type="button" class="add-time" onclick="addTimeBlock('W')">Add time</button>
-                </div>
-                <div class="day-block" data-day="R">
-                    <span class="day-label">Thursday</span>
-                    <div class="time-inputs" id="time-R"></div>
-                    <button type="button" class="add-time" onclick="addTimeBlock('R')">Add time</button>
-                </div>
-                <div class="day-block" data-day="F">
-                    <span class="day-label">Friday</span>
-                    <div class="time-inputs" id="time-F"></div>
-                    <button type="button" class="add-time" onclick="addTimeBlock('F')">Add time</button>
-                </div>
-            </div>
+            <div class="calendar-wrapper" id="calendarWrapper"></div>
         </div>
+    </div>
 
-        <button type="submit">Search</button>
-    </form>
+    <!-- Modal for section selection -->
+    <div class="modal" id="selectionModal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+            <div id="modalContent"></div>
+        </div>
+    </div>
 
     <script>
-        const DAYS = ['M', 'T', 'W', 'R', 'F'];
+        // State
+        let selectedCourses = [];
+        let searchTimeout = null;
+        let currentCourse = null;
+        let currentLecture = null;
+        let selectedLectureIndex = null;
+        let selectedSectionIndex = null;
+        let conflictFreeCombinations = [];
+        let courseConflictData = {}; // Map courseId -> conflictFreeCombinations
 
-        function addTimeBlock(day, startTime = '', endTime = '') {
-            const container = document.getElementById(`time-${day}`);
-            const timeRange = document.createElement('div');
-            timeRange.className = 'time-range';
-            timeRange.innerHTML = `
-                <input type="time" name="blackout[${day}][start][]" value="${startTime}" required>
-                <span>-</span>
-                <input type="time" name="blackout[${day}][end][]" value="${endTime}" required>
-                <button type="button" class="remove-time" onclick="this.parentElement.remove()">Remove</button>
-            `;
-            container.appendChild(timeRange);
-        }
-
-        function saveSchedule() {
-            const schedule = {};
-            DAYS.forEach(day => {
-                const container = document.getElementById(`time-${day}`);
-                const timeRanges = container.querySelectorAll('.time-range');
-                schedule[day] = [];
-                timeRanges.forEach(range => {
-                    const start = range.querySelector('input[type="time"]').value;
-                    const end = range.querySelectorAll('input[type="time"]')[1].value;
-                    if (start && end) {
-                        schedule[day].push({ start, end });
+        // Initialize
+        async function init() {
+            await loadDepartments();
+            initCalendar();
+            
+            document.getElementById('searchInput').addEventListener('input', handleSearch);
+            document.getElementById('departmentSelect').addEventListener('change', handleSearch);
+            document.getElementById('filterBySchedule').addEventListener('change', handleSearch);
+            
+            // Helper to trigger re-search if filter is active
+            function triggerSearchIfFiltered() {
+                if (document.getElementById('filterBySchedule').checked) {
+                    const query = document.getElementById('searchInput').value.trim();
+                    const department = document.getElementById('departmentSelect').value;
+                    if (query || department) {
+                        handleSearch();
                     }
-                });
-            });
-            localStorage.setItem('gauchoGuardianSchedule', JSON.stringify(schedule));
-            alert('Schedule saved!');
+                }
+            }
+            
+            // Store original functions
+            window.triggerSearchIfFiltered = triggerSearchIfFiltered;
         }
 
-        function loadSchedule() {
-            const saved = localStorage.getItem('gauchoGuardianSchedule');
-            if (!saved) {
-                alert('No saved schedule found.');
+        async function loadDepartments() {
+            try {
+                const response = await fetch('/api/departments');
+                const departments = await response.json();
+                const select = document.getElementById('departmentSelect');
+                departments.forEach(dept => {
+                    const option = document.createElement('option');
+                    option.value = dept;
+                    option.textContent = dept;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading departments:', error);
+            }
+        }
+
+        async function handleSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(async () => {
+                const query = document.getElementById('searchInput').value.trim();
+                const department = document.getElementById('departmentSelect').value;
+                const filterBySchedule = document.getElementById('filterBySchedule').checked;
+                
+                if (!query && !department) {
+                    document.getElementById('searchResults').innerHTML = 
+                        '<div class="empty-state">Start typing to search for courses</div>';
+                    return;
+                }
+                
+                document.getElementById('searchResults').innerHTML = 
+                    '<div class="loading">Searching...</div>';
+                
+                try {
+                    const response = await fetch('/api/search', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            q: query,
+                            dept: department,
+                            selectedCourses: filterBySchedule ? selectedCourses : []
+                        })
+                    });
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        displaySearchResults(data.courses);
+                    } else {
+                        document.getElementById('searchResults').innerHTML = 
+                            '<div class="empty-state">Error searching courses</div>';
+                    }
+                } catch (error) {
+                    console.error('Search error:', error);
+                    document.getElementById('searchResults').innerHTML = 
+                        '<div class="empty-state">Error searching courses</div>';
+                }
+            }, 300);
+        }
+
+        function displaySearchResults(courses) {
+            const container = document.getElementById('searchResults');
+            const filterStatus = document.getElementById('filterStatus');
+            const filterBySchedule = document.getElementById('filterBySchedule').checked;
+            
+            // Update filter status
+            if (filterBySchedule && selectedCourses.length > 0) {
+                filterStatus.textContent = `Showing ${courses.length} course(s) with no time conflicts`;
+                filterStatus.style.color = '#0066cc';
+            } else if (filterBySchedule && selectedCourses.length === 0) {
+                filterStatus.textContent = 'Add courses to your schedule to filter by conflicts';
+                filterStatus.style.color = '#999';
+            } else {
+                filterStatus.textContent = '';
+            }
+            
+            if (courses.length === 0) {
+                if (filterBySchedule && selectedCourses.length > 0) {
+                    container.innerHTML = '<div class="empty-state">No courses found without time conflicts. Try unchecking the filter or adjusting your schedule.</div>';
+                } else {
+                    container.innerHTML = '<div class="empty-state">No courses found</div>';
+                }
                 return;
             }
             
-            const schedule = JSON.parse(saved);
-            
-            // Clear existing time blocks
-            DAYS.forEach(day => {
-                const container = document.getElementById(`time-${day}`);
-                container.innerHTML = '';
-            });
-            
-            // Load saved schedule
-            DAYS.forEach(day => {
-                if (schedule[day] && schedule[day].length > 0) {
-                    schedule[day].forEach(({ start, end }) => {
-                        addTimeBlock(day, start, end);
-                    });
+            // Store conflict-free combinations for each course
+            courses.forEach(course => {
+                if (course._conflictFreeCombinations) {
+                    courseConflictData[course.courseId] = course._conflictFreeCombinations;
                 }
             });
             
-            alert('Schedule loaded!');
+            container.innerHTML = courses.map(course => `
+                <div class="course-item" onclick="openCourse('${course.courseId.replace(/'/g, "\\'")}')">
+                    <div class="course-code">${course.subjectArea} ${course.courseId}</div>
+                    <div class="course-title">${course.title}</div>
+                    <div class="course-meta">${course.units || 'N/A'} units</div>
+                </div>
+            `).join('');
         }
 
-        function clearSchedule() {
-            if (confirm('Clear all time blocks?')) {
-                DAYS.forEach(day => {
-                    const container = document.getElementById(`time-${day}`);
-                    container.innerHTML = '';
-                });
+        async function openCourse(courseId) {
+            try {
+                const encodedCourseId = encodeURIComponent(courseId);
+                const response = await fetch(`/api/course/${encodedCourseId}`);
+                const data = await response.json();
+                
+                if (!data.success || !data.course) {
+                    alert('Error loading course: ' + (data.error || 'Unknown error'));
+                    return;
+                }
+                
+                const course = data.course;
+                const lectures = course.lectureSections || [];
+                
+                if (lectures.length === 0) {
+                    alert('No lectures available for this course');
+                    return;
+                }
+                
+                // Get conflict-free combinations from stored data if available
+                conflictFreeCombinations = courseConflictData[courseId] || [];
+                
+                currentCourse = course;
+                currentLecture = null;
+                selectedLectureIndex = null;
+                selectedSectionIndex = null;
+                
+                showSectionModal();
+            } catch (error) {
+                alert('Error loading course: ' + error.message);
             }
         }
 
-        // Auto-load saved schedule on page load
-        window.addEventListener('DOMContentLoaded', function() {
-            const saved = localStorage.getItem('gauchoGuardianSchedule');
-            if (saved) {
-                const schedule = JSON.parse(saved);
-                DAYS.forEach(day => {
-                    if (schedule[day] && schedule[day].length > 0) {
-                        schedule[day].forEach(({ start, end }) => {
-                            addTimeBlock(day, start, end);
-                        });
+        function showSectionModal() {
+            const modal = document.getElementById('selectionModal');
+            const content = document.getElementById('modalContent');
+            const lectures = currentCourse.lectureSections || [];
+            const sections = currentCourse.sections || [];
+            const filterBySchedule = document.getElementById('filterBySchedule').checked;
+            const hasSelectedCourses = selectedCourses.length > 0;
+            
+            // Helper to check if a lecture+section combination is conflict-free
+            function isConflictFree(lectureIdx, sectionIdx) {
+                if (!filterBySchedule || !hasSelectedCourses || conflictFreeCombinations.length === 0) {
+                    return true; // Show all if not filtering
+                }
+                if (lectureIdx === null || lectureIdx === undefined) {
+                    return true; // Can't check without a lecture
+                }
+                return conflictFreeCombinations.some(combo => 
+                    combo.lectureIndex === lectureIdx && 
+                    (sectionIdx === null ? combo.sectionIndex === null : combo.sectionIndex === sectionIdx)
+                );
+            }
+            
+            // Helper to check if a lecture is conflict-free (with any section)
+            function isLectureConflictFree(lectureIdx) {
+                if (!filterBySchedule || !hasSelectedCourses || conflictFreeCombinations.length === 0) {
+                    return true;
+                }
+                return conflictFreeCombinations.some(combo => combo.lectureIndex === lectureIdx);
+            }
+            
+            let html = `
+                <div class="modal-header">
+                    <h3>${currentCourse.subjectArea} ${currentCourse.courseId}: ${currentCourse.title}</h3>
+                    <p>Select a lecture${sections.length > 0 ? ' and section' : ''}</p>
+                </div>
+            `;
+            
+            // Auto-select first lecture if none selected
+            if (selectedLectureIndex === null && lectures.length > 0) {
+                selectedLectureIndex = 0;
+                currentLecture = lectures[0];
+            }
+            
+            // Show all lectures if multiple exist
+            if (lectures.length > 1) {
+                html += '<div style="margin-bottom: 1rem;"><strong>Lectures:</strong></div>';
+                html += '<div class="section-list" style="margin-bottom: 1.5rem;">';
+                lectures.forEach((lecture, idx) => {
+                    const lectureTimeStr = lecture.times && lecture.times.length > 0
+                        ? lecture.times.map(t => `${t.days} ${t.startTime}-${t.endTime}`).join(', ')
+                        : 'Time TBA';
+                    const isSelected = idx === selectedLectureIndex ? 'selected' : '';
+                    const lectureIsConflictFree = isLectureConflictFree(idx);
+                    const conflictBadge = filterBySchedule && hasSelectedCourses 
+                        ? (lectureIsConflictFree ? '<span style="color: #008855; font-size: 0.75rem; margin-left: 0.5rem;">✓ No conflicts</span>' 
+                                          : '<span style="color: #cc0000; font-size: 0.75rem; margin-left: 0.5rem;">⚠ Conflicts</span>')
+                        : '';
+                    const opacity = (filterBySchedule && hasSelectedCourses && !lectureIsConflictFree) ? '0.6' : '1';
+                    
+                    html += `
+                        <div class="section-item ${isSelected}" onclick="selectLecture(${idx})" style="opacity: ${opacity};">
+                            <div class="lecture-time">${lecture.section || 'Lecture'} ${conflictBadge}</div>
+                            <div class="lecture-meta">${lectureTimeStr}</div>
+                            <div class="lecture-meta">${lecture.instructor || 'TBA'}</div>
+                            <div class="lecture-meta">${lecture.enrolled || 0}/${lecture.maxEnroll || 0}</div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            }
+            
+            // Show selected lecture info
+            const displayLecture = currentLecture || lectures[selectedLectureIndex] || lectures[0];
+            if (displayLecture) {
+                const lectureTimeStr = displayLecture.times && displayLecture.times.length > 0
+                    ? displayLecture.times.map(t => `${t.days} ${t.startTime}-${t.endTime}`).join(', ')
+                    : 'Time TBA';
+                
+                html += `
+                    <div style="margin-bottom: 1.5rem; padding: 1rem; background: #e8f4f8; border-radius: 4px;">
+                        <strong>${lectures.length > 1 ? 'Selected ' : ''}Lecture:</strong><br>
+                        ${displayLecture.section || 'Lecture'} - ${lectureTimeStr}<br>
+                        ${displayLecture.instructor || 'TBA'} | ${displayLecture.enrolled || 0}/${displayLecture.maxEnroll || 0}
+                    </div>
+                `;
+            }
+            
+            // Show sections
+            if (sections.length > 0) {
+                html += '<div style="margin-bottom: 0.5rem;"><strong>Sections:</strong></div>';
+                html += '<div class="section-list">';
+                const currentLectureIdx = selectedLectureIndex !== null ? selectedLectureIndex : (lectures.length > 0 ? 0 : null);
+                
+                sections.forEach((section, index) => {
+                    const timeStr = section.times && section.times.length > 0
+                        ? section.times.map(t => `${t.days} ${t.startTime}-${t.endTime}`).join(', ')
+                        : 'Time TBA';
+                    const isSelected = index === selectedSectionIndex ? 'selected' : '';
+                    const sectionIsConflictFree = isConflictFree(currentLectureIdx, index);
+                    const conflictBadge = filterBySchedule && hasSelectedCourses 
+                        ? (sectionIsConflictFree ? '<span style="color: #008855; font-size: 0.75rem; margin-left: 0.5rem;">✓ No conflicts</span>' 
+                                          : '<span style="color: #cc0000; font-size: 0.75rem; margin-left: 0.5rem;">⚠ Conflicts</span>')
+                        : '';
+                    const opacity = (filterBySchedule && hasSelectedCourses && !sectionIsConflictFree) ? '0.6' : '1';
+                    
+                    html += `
+                        <div class="section-item ${isSelected}" onclick="selectSection(${index})" style="opacity: ${opacity};">
+                            <div class="lecture-time">${section.section || 'Section'} ${conflictBadge}</div>
+                            <div class="lecture-meta">${timeStr}</div>
+                            <div class="lecture-meta">${section.instructor || 'TBA'}</div>
+                            <div class="lecture-meta">${section.enrolled || 0}/${section.maxEnroll || 0}</div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            } else {
+                html += '<div class="empty-state" style="padding: 1rem;">No sections available</div>';
+            }
+            
+            html += `<button class="add-btn" onclick="addCourse()">Add Course</button>`;
+            
+            content.innerHTML = html;
+            modal.classList.add('active');
+        }
+        
+        function selectLecture(index) {
+            selectedLectureIndex = index;
+            currentLecture = currentCourse.lectureSections[index];
+            selectedSectionIndex = null; // Reset section selection when lecture changes
+            showSectionModal();
+        }
+
+        function selectSection(index) {
+            selectedSectionIndex = index;
+            document.querySelectorAll('.section-item').forEach((item, i) => {
+                if (i === index) {
+                    item.classList.add('selected');
+                } else {
+                    item.classList.remove('selected');
+                }
+            });
+        }
+
+        async function addCourse() {
+            // Use selected lecture or fall back to first lecture
+            const lectureToUse = currentLecture || 
+                                (selectedLectureIndex !== null ? currentCourse.lectureSections[selectedLectureIndex] : null) ||
+                                (currentCourse.lectureSections && currentCourse.lectureSections[0]);
+            
+            if (!currentCourse || !lectureToUse) {
+                alert('Error: Please select a lecture');
+                return;
+            }
+            
+            const section = (selectedSectionIndex !== null && currentCourse.sections) 
+                ? currentCourse.sections[selectedSectionIndex] 
+                : null;
+            
+            try {
+                const response = await fetch('/api/section', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        lectureCode: lectureToUse.enrollCode,
+                        sectionCode: section ? section.enrollCode : null
+                    })
+                });
+                const data = await response.json();
+                
+                if (data.success && data.course) {
+                    selectedCourses.push(data.course);
+                    updateSelectedCoursesList();
+                    updateCalendar();
+                    closeModal();
+                    // Re-search if filter is active
+                    if (window.triggerSearchIfFiltered) {
+                        window.triggerSearchIfFiltered();
                     }
-                });
+                } else {
+                    alert('Error adding course: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Error adding course: ' + error.message);
             }
-        });
+        }
+
+        function closeModal() {
+            document.getElementById('selectionModal').classList.remove('active');
+            currentCourse = null;
+            currentLecture = null;
+            selectedLectureIndex = null;
+            selectedSectionIndex = null;
+            conflictFreeCombinations = [];
+        }
+
+        function removeCourse(courseId, lectureCode) {
+            selectedCourses = selectedCourses.filter(c => 
+                !(c.courseId === courseId && c.lecture.enrollCode === lectureCode)
+            );
+            updateSelectedCoursesList();
+            updateCalendar();
+            // Re-search if filter is active
+            if (window.triggerSearchIfFiltered) {
+                window.triggerSearchIfFiltered();
+            }
+        }
+
+        function updateSelectedCoursesList() {
+            const container = document.getElementById('selectedCoursesList');
+            
+            if (selectedCourses.length === 0) {
+                container.innerHTML = '<div class="empty-state" style="padding: 1rem; font-size: 0.85rem;">No courses selected</div>';
+                return;
+            }
+            
+            container.innerHTML = selectedCourses.map(course => {
+                const lectureTime = course.lecture.times.map(t => 
+                    `${t.days} ${t.startTime}-${t.endTime}`
+                ).join(', ');
+                const sectionTime = course.section ? course.section.times.map(t => 
+                    `${t.days} ${t.startTime}-${t.endTime}`
+                ).join(', ') : 'No section';
+                
+                return `
+                    <div class="selected-course">
+                        <div class="selected-course-header">
+                            <div>
+                                <div style="font-weight: 600; font-size: 0.9rem;">${course.subjectArea} ${course.courseId}</div>
+                                <div style="font-size: 0.8rem; color: #666; margin-top: 0.25rem;">${course.title}</div>
+                                <div style="font-size: 0.75rem; color: #666; margin-top: 0.25rem;">
+                                    LEC: ${lectureTime}<br>
+                                    SEC: ${sectionTime}
+                                </div>
+                            </div>
+                            <button class="remove-btn" onclick="removeCourse('${course.courseId}', '${course.lecture.enrollCode}')">Remove</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function initCalendar() {
+            const wrapper = document.getElementById('calendarWrapper');
+            wrapper.innerHTML = '';
+            
+            const times = [];
+            for (let hour = 8; hour <= 20; hour++) {
+                times.push(`${hour.toString().padStart(2, '0')}:00`);
+            }
+            
+            const days = [
+                { full: 'Monday', abbr: 'Mon', code: 'M' },
+                { full: 'Tuesday', abbr: 'Tue', code: 'T' },
+                { full: 'Wednesday', abbr: 'Wed', code: 'W' },
+                { full: 'Thursday', abbr: 'Thu', code: 'R' },
+                { full: 'Friday', abbr: 'Fri', code: 'F' }
+            ];
+            
+            const timeColumn = document.createElement('div');
+            timeColumn.className = 'time-column';
+            timeColumn.appendChild(document.createElement('div')).className = 'day-header';
+            times.forEach(time => {
+                const timeSlot = document.createElement('div');
+                timeSlot.className = 'time-slot';
+                timeSlot.textContent = time;
+                timeColumn.appendChild(timeSlot);
+            });
+            wrapper.appendChild(timeColumn);
+            
+            days.forEach(day => {
+                const dayColumn = document.createElement('div');
+                dayColumn.className = 'day-column';
+                dayColumn.id = `day-${day.code}`;
+                const header = document.createElement('div');
+                header.className = 'day-header';
+                header.innerHTML = `<span class="day-label">${day.full}</span><span class="day-abbr">${day.abbr}</span>`;
+                dayColumn.appendChild(header);
+                wrapper.appendChild(dayColumn);
+            });
+        }
+
+        function updateCalendar() {
+            document.querySelectorAll('.course-block').forEach(block => block.remove());
+            
+            const colors = [
+                '#0066cc', '#008855', '#cc6600', '#9900cc', '#cc0066',
+                '#0099cc', '#66cc00', '#cc9900', '#cc0099', '#0099ff'
+            ];
+            
+            selectedCourses.forEach((course, courseIndex) => {
+                const color = colors[courseIndex % colors.length];
+                const courseLabel = `${course.subjectArea} ${course.courseId}`;
+                
+                if (course.lecture && course.lecture.times) {
+                    course.lecture.times.forEach(timeInfo => {
+                        timeInfo.days.split('').forEach(day => {
+                            if (['M', 'T', 'W', 'R', 'F'].includes(day)) {
+                                const block = createCourseBlock(
+                                    `${courseLabel} (LEC)`,
+                                    timeInfo.startTime,
+                                    timeInfo.endTime,
+                                    day,
+                                    color
+                                );
+                                if (block) {
+                                    document.getElementById(`day-${day}`).appendChild(block);
+                                }
+                            }
+                        });
+                    });
+                }
+                
+                if (course.section && course.section.times) {
+                    course.section.times.forEach(timeInfo => {
+                        timeInfo.days.split('').forEach(day => {
+                            if (['M', 'T', 'W', 'R', 'F'].includes(day)) {
+                                const block = createCourseBlock(
+                                    `${courseLabel} (SEC)`,
+                                    timeInfo.startTime,
+                                    timeInfo.endTime,
+                                    day,
+                                    color
+                                );
+                                if (block) {
+                                    document.getElementById(`day-${day}`).appendChild(block);
+                                }
+                            }
+                        });
+                    });
+                }
+            });
+        }
+
+        function createCourseBlock(label, startTime, endTime, day, color) {
+            function timeToMinutes(timeStr) {
+                const [hours, minutes] = timeStr.split(':').map(Number);
+                return hours * 60 + minutes;
+            }
+            
+            const startMinutes = timeToMinutes(startTime);
+            const endMinutes = timeToMinutes(endTime);
+            const duration = endMinutes - startMinutes;
+            const minutesSince8AM = startMinutes - 480;
+            const startOffset = 40 + minutesSince8AM;
+            const height = duration;
+            
+            if (minutesSince8AM < 0 || minutesSince8AM > 720 || minutesSince8AM + duration > 720) {
+                return null;
+            }
+            
+            const block = document.createElement('div');
+            block.className = 'course-block';
+            block.textContent = label;
+            block.style.top = `${startOffset}px`;
+            block.style.height = `${Math.max(height, 20)}px`;
+            block.style.background = color;
+            block.title = `${label}\n${startTime} - ${endTime}`;
+            
+            return block;
+        }
+
+        window.openCourse = openCourse;
+        window.selectLecture = selectLecture;
+        window.selectSection = selectSection;
+        window.addCourse = addCourse;
+        window.closeModal = closeModal;
+        window.removeCourse = removeCourse;
+
+        init();
     </script>
-
-    <hr>
-
-    <footer>
-        <p>Created by Mordecai Araya, Roberto Ortiz, Blair Lu, and Landon Gemmill</p>
-        <p>SB Hacks XII Project | <a href="https://github.com/mordecaai/gaucho_guardian" target="_blank" rel="noopener noreferrer">View on GitHub</a></p>
-    </footer>
 </body>
 </html>
