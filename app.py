@@ -32,10 +32,23 @@ def api_search():
         data = request.get_json()
         query = data.get("q", "").strip() if data else ""
         department = data.get("dept", "").strip() if data else ""
+        special_subject = data.get("specialSubject", "").strip() if data else ""
+        general_subjects = data.get("generalSubjects", []) if data else []
+        # Handle legacy single generalSubject parameter for backward compatibility
+        if not general_subjects and data and "generalSubject" in data:
+            general_subject_val = data.get("generalSubject", "").strip()
+            general_subjects = [general_subject_val] if general_subject_val else []
         selected_courses = data.get("selectedCourses", []) if data else []
     else:
         query = request.args.get("q", "").strip()
         department = request.args.get("dept", "").strip()
+        special_subject = request.args.get("specialSubject", "").strip()
+        # For GET requests, parse comma-separated values or single value
+        general_subjects_str = request.args.get("generalSubjects", "").strip()
+        general_subjects = [s.strip() for s in general_subjects_str.split(",")] if general_subjects_str else []
+        if not general_subjects:
+            general_subject_val = request.args.get("generalSubject", "").strip()
+            general_subjects = [general_subject_val] if general_subject_val else []
         selected_courses = []
     
     try:
@@ -54,7 +67,13 @@ def api_search():
             else:
                 limit = 100  # Standard limit when searching with a query
         
-        results = search_courses(query=query, department=department, limit=limit)
+        results = search_courses(
+            query=query, 
+            department=department, 
+            general_subjects=general_subjects,
+            special_subject=special_subject,
+            limit=limit
+        )
         
         # Filter by schedule if selected courses provided
         if selected_courses:

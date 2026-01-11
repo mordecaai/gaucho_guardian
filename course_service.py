@@ -101,15 +101,27 @@ def course_has_times(course_data: Dict) -> bool:
         return False
 
 
-def search_courses(query: str = "", department: str = "", limit: int = 100) -> List[Dict]:
+def search_courses(query: str = "", department: str = "", general_subjects: List[str] = None, special_subject: str = "", limit: int = 100) -> List[Dict]:
     """
-    Search courses based on query and department
+    Search courses based on query, department, general subject (GE Areas), and special subject requirements
     Returns a list of unique course summaries grouped by courseId (limited to 'limit' results)
     Only includes courses that have at least one section with valid time information.
+    
+    Args:
+        query: Text search query
+        department: Department filter
+        general_subjects: List of general subject requirements (Area A, B, C, etc.) - courses matching ANY will be included
+        special_subject: Single special subject requirement filter (AREA, ETH, EUR, NWC, QNT, WRT)
+        limit: Maximum number of results to return
     """
+    if general_subjects is None:
+        general_subjects = []
+    
     results_dict = {}  # Key: courseId, Value: course summary
     query_lower = query.lower() if query else ""
     dept_upper = department.upper() if department else ""
+    special_subject_upper = special_subject.upper() if special_subject else ""
+    general_subjects_upper = [s.upper() for s in general_subjects if s]  # Normalize all general subjects
     
     # Build a flat list of all course codes with department info
     course_codes = []
@@ -158,13 +170,48 @@ def search_courses(query: str = "", department: str = "", limit: int = 100) -> L
             if normalized_query not in search_text and query_no_spaces not in search_text_no_spaces:
                 continue
         
+        # Get general education requirements
+        general_education = course_data.get("generalEducation", [])
+        ge_codes = [ge.get("geCode", "").upper() for ge in general_education if isinstance(ge, dict)]
+        
+        # Filter by general subjects (Area A, B, C, etc.) - matches if ANY selected area matches
+        if general_subjects_upper:
+            matches_any = False
+            for area in general_subjects_upper:
+                # Check each GE requirement object for area match
+                for ge in general_education:
+                    if not isinstance(ge, dict):
+                        continue
+                    # Check if GE code contains the area letter (e.g., "AREA A" contains "A")
+                    ge_code = ge.get("geCode", "").upper()
+                    if area in ge_code or ge_code.startswith(area):
+                        matches_any = True
+                        break
+                    # Check if there's an explicit area field in the GE object
+                    ge_area = ge.get("area", "").upper()
+                    if ge_area == area:
+                        matches_any = True
+                        break
+                if matches_any:
+                    break
+            
+            if not matches_any:
+                continue
+        
+        # Filter by special subject (specific GE code like AREA, ETH, EUR, NWC, QNT, WRT)
+        if special_subject_upper:
+            # Check if course has the specified GE code
+            if special_subject_upper not in ge_codes:
+                continue
+        
         # Extract basic info for search results
         course_summary = {
             "courseId": course_id,
             "title": title,
             "subjectArea": subject_area,
             "units": course_data.get("unitsFixed", course_data.get("unitsVariableHigh")),
-            "department": dept
+            "department": dept,
+            "generalEducation": general_education  # Include GE data for frontend display
         }
         
         results_dict[course_id] = course_summary

@@ -221,6 +221,46 @@
             cursor: pointer;
         }
 
+        .general-subject-filter {
+            margin-bottom: 0.75rem;
+        }
+
+        .general-subject-checkboxes {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 0.5rem;
+            background: #ffffff;
+        }
+
+        .general-subject-checkboxes::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .general-subject-checkboxes::-webkit-scrollbar-track {
+            background: #f9fafb;
+            border-radius: 4px;
+        }
+
+        .general-subject-checkboxes::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+
+        .general-subject-checkboxes::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+
+        .general-subject-checkboxes .filter-checkbox {
+            margin-top: 0.25rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .general-subject-checkboxes .filter-checkbox:first-of-type {
+            margin-top: 0;
+        }
+
         #filterStatus {
             font-size: 0.8rem;
             color: #6b7280;
@@ -1074,6 +1114,47 @@
                     <select id="departmentSelect">
                         <option value="">All Departments</option>
                     </select>
+                    <div class="general-subject-filter">
+                        <label style="font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem; display: block;">General Subject Requirements (select multiple):</label>
+                        <div class="general-subject-checkboxes">
+                            <div class="filter-checkbox">
+                                <input type="checkbox" id="generalSubjectA" value="A" class="general-subject-checkbox">
+                                <label for="generalSubjectA">Area A: English Reading and Composition</label>
+                            </div>
+                            <div class="filter-checkbox">
+                                <input type="checkbox" id="generalSubjectB" value="B" class="general-subject-checkbox">
+                                <label for="generalSubjectB">Area B: Foreign Language</label>
+                            </div>
+                            <div class="filter-checkbox">
+                                <input type="checkbox" id="generalSubjectC" value="C" class="general-subject-checkbox">
+                                <label for="generalSubjectC">Area C: Science, Mathematics, and Technology</label>
+                            </div>
+                            <div class="filter-checkbox">
+                                <input type="checkbox" id="generalSubjectD" value="D" class="general-subject-checkbox">
+                                <label for="generalSubjectD">Area D: Social Sciences</label>
+                            </div>
+                            <div class="filter-checkbox">
+                                <input type="checkbox" id="generalSubjectE" value="E" class="general-subject-checkbox">
+                                <label for="generalSubjectE">Area E: Culture and Thought</label>
+                            </div>
+                            <div class="filter-checkbox">
+                                <input type="checkbox" id="generalSubjectF" value="F" class="general-subject-checkbox">
+                                <label for="generalSubjectF">Area F: Arts</label>
+                            </div>
+                            <div class="filter-checkbox">
+                                <input type="checkbox" id="generalSubjectG" value="G" class="general-subject-checkbox">
+                                <label for="generalSubjectG">Area G: Literature</label>
+                            </div>
+                        </div>
+                    </div>
+                    <select id="specialSubjectSelect">
+                        <option value="">All Special Subject Requirements</option>
+                        <option value="ETH">Ethnicity</option>
+                        <option value="EUR">European Traditions</option>
+                        <option value="NWC">Non-Western Cultures</option>
+                        <option value="QNT">Quantitative Relationships</option>
+                        <option value="WRT">Writing</option>
+                    </select>
                     <div class="filter-checkbox">
                         <input type="checkbox" id="filterBySchedule" checked>
                         <label for="filterBySchedule">Show only classes with no time conflicts</label>
@@ -1390,6 +1471,11 @@
             
             document.getElementById('searchInput').addEventListener('input', handleSearch);
             document.getElementById('departmentSelect').addEventListener('change', handleSearch);
+            document.getElementById('specialSubjectSelect').addEventListener('change', handleSearch);
+            // Add event listeners for all general subject checkboxes
+            document.querySelectorAll('.general-subject-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', handleSearch);
+            });
             document.getElementById('filterBySchedule').addEventListener('change', handleSearch);
             
             // Add event listeners for automatic optimization
@@ -1544,6 +1630,10 @@
             searchTimeout = setTimeout(async () => {
                 const query = document.getElementById('searchInput').value.trim();
                 const department = document.getElementById('departmentSelect').value;
+                const specialSubject = document.getElementById('specialSubjectSelect').value;
+                // Collect all checked general subject checkboxes into an array
+                const generalSubjects = Array.from(document.querySelectorAll('.general-subject-checkbox:checked'))
+                    .map(checkbox => checkbox.value);
                 const filterBySchedule = document.getElementById('filterBySchedule').checked;
                 
                 document.getElementById('searchResults').innerHTML = 
@@ -1556,6 +1646,8 @@
                         body: JSON.stringify({
                             q: query,
                             dept: department,
+                            generalSubjects: generalSubjects, // Send as array
+                            specialSubject: specialSubject, // Send as single value
                             selectedCourses: filterBySchedule ? selectedCourses : []
                         })
                     });
@@ -1655,6 +1747,8 @@
                             body: JSON.stringify({
                                 q: courseId, // Search by full courseId (e.g., "CMPSC 16")
                                 dept: '',
+                                generalSubjects: [], // Empty array when searching by course ID
+                                specialSubject: '', // Empty string when searching by course ID
                                 selectedCourses: selectedCourses
                             })
                         });
