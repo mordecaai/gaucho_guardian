@@ -16,7 +16,22 @@ import json
 import pandas as pd
 import numpy as np
 
+
+
 MY_API_KEY = input("Enter your API key: ")
+
+headers = {
+    'accept': 'text/plain',
+    'ucsb-api-key': MY_API_KEY
+}
+date = "20261"
+class_code = "03558" #Currently: W 2026 CH ST 1B
+url = f"https://api.ucsb.edu/academics/curriculums/v3/classes/{date}/{class_code}?includeClassSections=true"
+
+def getData(year, quarter, class_code):
+   class_url = f"https://api.ucsb.edu/academics/curriculums/v3/classes/{date}/{class_code}?includeClassSections=true"
+   response = requests.get(class_url, headers=headers)
+   return response.json() if response.status_code == 200 else None
 
 # put filtered grades from daily nexus into a data frame
 grades_df = pd.read_csv('grades_filtered.csv')
@@ -174,6 +189,10 @@ def rank_courses(courses, prefs):
     sorted_courses = sorted(courses, key = lambda course: course["score"], reverse = True)
     return sorted_courses
    
+class1 = getData(date, 1, class_code)
+if class1:
+    print(f"\n{class1.get('title')} Score: {score_course(class1, user_preferences)}/100")
+
 
       
    
